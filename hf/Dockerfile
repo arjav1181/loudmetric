@@ -22,8 +22,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       postgresql-15 postgresql-client-15 ca-certificates curl \
     && rm -rf /var/lib/apt/lists/*
 
-ENV NODE_ENV=production \
-    NEXT_TELEMETRY_DISABLED=1 \
+# NODE_ENV is deliberately NOT set here.
+#
+# This was the cause of a BUILD_ERROR on the Space that took three rebuilds to
+# find. Setting NODE_ENV=production above `npm ci` makes npm skip
+# devDependencies, so typescript was never installed, and `next build` then
+# failed with a wall of "Module not found: Can't resolve '@/lib/db'" — an error
+# that looks like a missing source file or a bad path alias and is neither.
+# The tell was npm reporting 36 packages where a full install is 47.
+#
+# Reproduced locally by running the same two commands in that order: identical
+# errors, and `npm ci --include=dev` fixes it.
+#
+# NODE_ENV is set after the build, where it actually belongs: it is a runtime
+# concern, and setting it early only breaks the build.
+ENV NEXT_TELEMETRY_DISABLED=1 \
     PGDATA=/var/lib/postgresql/data \
     DATABASE_URL=postgres://loudmetric:loudmetric@localhost:5432/loudmetric \
     PORT=7860 \
@@ -45,7 +58,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3 python3
 # only runtime deps and then building was the first version of this file, and it
 # fails at the build step with a missing-compiler error.
 COPY package.json package-lock.json* ./
-RUN npm ci --registry=https://registry.npmjs.org/
+# --include=dev as well as the un-early NODE_ENV, because one guard against a
+# failure mode this subtle is not enough. Prune removes them again further down.
+RUN npm ci --include=dev --registry=https://registry.npmjs.org/
 
 COPY . .
 RUN npm run build
@@ -62,6 +77,9 @@ RUN npm run build
 #   correctness requirement. A network hiccup in an optional step should cost a
 #   few hundred megabytes, not the deployment.
 RUN npm prune --omit=dev --registry=https://registry.npmjs.org/ || echo "prune skipped (non-fatal)"
+
+# Runtime only, after the build. See the note at the top of this file.
+ENV NODE_ENV=production
 
 # Postgres refuses to run as root, so it gets its own account with its own
 # home. The app still runs as root, which is not great practice but matches what
