@@ -219,6 +219,52 @@ rather than assumed.
 
 ---
 
+## Run it on a Hugging Face Space
+
+```bash
+huggingface-cli login
+huggingface-cli repo create abc1181/loudmetric --repo-type space --sdk docker --space-sdk docker
+huggingface-cli upload abc1181/loudmetric . --repo-type space \
+  --include "hf/*" "Dockerfile" "README.md" ".env.example" \
+             "package*.json" "next.config.mjs" "tsconfig.json" \
+             "src/**" "public/**" "db/**" "scripts/**"
+```
+
+Postgres runs in the Space container and is dumped to an HF Dataset every 15
+minutes, restored on boot. That is the mechanism Hugging Face recommends:
+persistent storage is retired, and a dataset repo is the documented replacement.
+
+**It is a dump, not a live data directory.** Anything written in the last
+`SYNC_INTERVAL` seconds is lost if the Space restarts — the dashboard reports the
+age of the newest event so the sync window is visible rather than implied. A dump
+is a consistent snapshot, so there is no half-written file, just a real window of
+loss.
+
+Docker Spaces require a paid PRO plan; free accounts can only host Gradio Spaces
+on ZeroGPU.
+
+### Why not sync a live PGDATA
+
+Because it corrupts. A Postgres data directory needs `fsync` semantics,
+`/dev/shm`, and background processes (checkpointer, WAL writer) against a real
+filesystem. Round-tripping a running cluster through git and LFS does not persist
+it, it breaks it. `pg_dump --format=custom` produces a consistent snapshot that
+`pg_restore --clean` can put back, which is why the sync uses that.
+
+Verified locally: 90,833 events dumped, dropped, and restored byte-identical in
+count through a real `pg_restore`.
+
+### Files
+
+| Path | Does |
+|---|---|
+| `hf/Dockerfile` | Space image: Postgres + app, port 7860 |
+| `hf/entrypoint.sh` | Boot: start PG, restore, migrate, serve, sync loop |
+| `hf/sync.py` | `push` / `pull` the dump to the dataset |
+| `hf/README.md` | Space frontmatter and public description |
+
+---
+
 ## Licence
 
 MIT. Use it, fork it, self-host it, sell support for it.
