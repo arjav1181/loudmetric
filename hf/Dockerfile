@@ -19,7 +19,7 @@ FROM node:22-bookworm-slim
 # postgresql-15 for the server; postgresql-client-15 for pg_dump/pg_restore, which
 # run on a different schedule than the server itself.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      postgresql-15 postgresql-client-15 ca-certificates \
+      postgresql-15 postgresql-client-15 ca-certificates curl \
     && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production \
@@ -49,8 +49,19 @@ RUN npm ci --registry=https://registry.npmjs.org/
 
 COPY . .
 RUN npm run build
-# Only now is it safe to drop the toolchain.
-RUN npm prune --omit=dev
+# Drop the toolchain now that the build is done.
+#
+# Two things fixed here, both found by an actual BUILD_ERROR on the Space:
+#
+#   --registry is repeated deliberately. `npm ci` above is pinned, but prune
+#   resolves its own tree and would otherwise hit the default registry — the one
+#   that serves 403s and, earlier in this project's life, a truncated native
+#   binary. It failed the whole Space build at this step.
+#
+#   `|| true` because pruning is an image-size optimisation, never a
+#   correctness requirement. A network hiccup in an optional step should cost a
+#   few hundred megabytes, not the deployment.
+RUN npm prune --omit=dev --registry=https://registry.npmjs.org/ || echo "prune skipped (non-fatal)"
 
 # Postgres refuses to run as root, so it gets its own account with its own
 # home. The app still runs as root, which is not great practice but matches what
@@ -72,6 +83,9 @@ ARG HF_TOKEN=""
 ARG HF_DATASET_ID=""
 ENV HF_TOKEN=$HF_TOKEN HF_DATASET_ID=$HF_DATASET_ID
 
+# curl is in the image because of this line specifically. bookworm-slim does not
+# ship it, and a HEALTHCHECK whose binary is missing fails forever, which marks
+# a perfectly healthy Space as unhealthy.
 HEALTHCHECK --interval=60s --timeout=10s --start-period=90s --retries=3 \
   CMD curl -fsS http://localhost:7860/api/health || exit 1
 
