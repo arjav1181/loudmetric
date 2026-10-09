@@ -33,13 +33,41 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+try:  # huggingface_hub ships its own token-path resolution; reuse it verbatim
+    from huggingface_hub.constants import HF_TOKEN_PATH as _HF_TOKEN_PATH
+except Exception:  # pragma: no cover - only if the package layout changes
+    _HF_TOKEN_PATH = Path(
+        os.environ.get("HF_HOME", str(Path.home() / ".cache" / "huggingface")) / "token"
+    )
+
 DUMP_DIR = Path("/dumps")
 DUMP_PATH = DUMP_DIR / "latest.dump"
 DB_URL = os.environ.get(
     "DATABASE_URL", "postgres://loudmetric:loudmetric@localhost:5432/loudmetric"
 )
 DATASET_ID = os.environ.get("HF_DATASET_ID", "").strip()
-TOKEN = os.environ.get("HF_TOKEN", "").strip()
+
+
+def resolve_token() -> str:
+    """
+    Token from the environment first, then the file `huggingface-cli login`
+    writes.
+
+    The second path matters: `hf auth login` is how most people authenticate
+    locally, and a script that only reads HF_TOKEN would silently report "not
+    configured" and skip every sync while looking like it had nothing to do. On
+    the Space itself HF_TOKEN is a Secret and the env path is what runs.
+    """
+    env = os.environ.get("HF_TOKEN", "").strip()
+    if env:
+        return env
+    try:
+        return Path(_HF_TOKEN_PATH).read_text().strip()
+    except Exception:
+        return ""
+
+
+TOKEN = resolve_token()
 
 
 def log(msg: str) -> None:
