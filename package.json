@@ -13,7 +13,9 @@
     "db:partitions": "psql \"$DATABASE_URL\" -f db/partition.sql",
     "db:seed": "tsx db/seed.ts",
     "test": "tsx src/lib/sql-guard.test.ts && tsx src/lib/ai/grounding.test.ts",
-    "test:db": "tsx src/lib/sql-guard.db.test.ts"
+    "test:db": "tsx src/lib/sql-guard.db.test.ts",
+    "test:agent": "tsx src/lib/ai/agent.test.ts",
+    "test:all": "npm test && npm run typecheck"
   },
   "dependencies": {
     "next": "14.2.35",

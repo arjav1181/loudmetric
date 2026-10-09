@@ -5,6 +5,7 @@ import {
   getScrollFunnel,
 } from "@/lib/queries";
 import { compact } from "@/lib/vitals";
+import { AnomalyPanel } from "./AnomalyPanel";
 import { BarChart } from "./charts";
 import { Header, NoSite, parseRange, resolveSite } from "./shell";
 import { Bars, CARD, Caveat, Delta, Empty, Panel, Stat } from "./ui";
@@ -70,6 +71,8 @@ export default async function DashboardPage({
               sub="time on page"
             />
           </div>
+
+          <AnomalyPanel siteId={site.id} />
 
           <Panel
             title="Traffic"

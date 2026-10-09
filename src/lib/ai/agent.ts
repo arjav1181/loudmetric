@@ -1,3 +1,4 @@
+import { detectAnomalies, explainAnomaly } from "@/lib/anomaly";
 import { getOverview, getPages, getVitals } from "@/lib/queries";
 import { runGuarded, SCHEMA_HINT } from "@/lib/sql-guard";
 import { getProvider, type Message, type Provider, type ToolDef, type ToolCall } from "./provider";
@@ -27,8 +28,12 @@ not run a query, you do not know the answer, and you must say so.
 ## Rules
 
 1. NEVER state a number you did not receive from a tool result. This is absolute.
-2. Prefer the semantic tools (overview, pages, vitals) over raw SQL. They are
-   tested; your SQL is not.
+2. Prefer the semantic tools (overview, pages, vitals, anomalies) over raw SQL.
+   They are tested; your SQL is not.
+2b. NEVER detect an anomaly yourself by comparing two points in a time series.
+   That comparison is not day-of-week aware and will be wrong roughly half the
+   time. Call the anomalies tool. It is median + MAD against the same weekday, and it
+   the difference between an answer and a guess.
 3. When you do write SQL: always filter site_id = $1 AND occurred_at >= now() - interval '<n> days'.
    $1 is bound for you. Never inline a site id. Always end with LIMIT.
 4. If a query fails, read the Postgres error and fix the query. Do not give up, and
@@ -82,6 +87,20 @@ const TOOLS: ToolDef[] = [
     parameters: {
       type: "object",
       properties: { range: { type: "string", enum: ["24h", "7d", "30d", "90d"] } },
+    },
+  },
+  {
+    name: "anomalies",
+    description:
+      "Statistical anomaly detection over the last 28 days: each day compared against the same weekday over the previous 8 weeks, using median and median absolute deviation. Reports spikes and drops in traffic AND Core Web Vitals regressions. Use this for any 'what changed', 'why did X dip', 'did something break' question — do NOT try to detect anomalies yourself by eyeballing a time series, because that comparison is not day-of-week aware and will be wrong.",
+    parameters: {
+      type: "object",
+      properties: {
+        explain: {
+          type: "boolean",
+          description: "Set true to also attribute the most recent finding to specific pages.",
+        },
+      },
     },
   },
   {
@@ -220,6 +239,45 @@ async function execute(
         ],
       },
       result: JSON.stringify(payload),
+    };
+  }
+
+  if (call.name === "anomalies") {
+    const report = await detectAnomalies(siteId, 28);
+
+    // Attribution is only meaningful for a real finding, so it runs on demand
+    // rather than always paying for the extra query.
+    let attribution: Awaited<ReturnType<typeof explainAnomaly>> = [];
+    if (a.explain !== false && report.findings.length > 0) {
+      const worst = report.findings.find((f) => f.metric === "pageviews") ?? report.findings[0];
+      attribution = await explainAnomaly(siteId, worst.at);
+    }
+
+    return {
+      step: {
+        tool: "anomalies",
+        args: {},
+        numericContext: context({
+          ...report,
+          attribution,
+        }),
+        render: { kind: "table", label: "Anomalies, last 28 days" },
+        columns: ["metric", "at", "actual", "expected", "changePct", "severity"],
+        rows: report.findings.map((f) => ({
+          metric: f.metric,
+          at: f.at,
+          actual: f.actual,
+          expected: f.expected,
+          changePct: f.changePct,
+          severity: f.severity,
+        })),
+      },
+      result: JSON.stringify({
+        thinData: report.thinData,
+        method: "each day vs the same weekday over the previous 8 weeks, median + MAD",
+        findings: report.findings,
+        attribution: attribution.map((x) => `${x.path}: ${x.delta > 0 ? "+" : ""}${x.delta} (was ${x.then}, now ${x.now})`),
+      }),
     };
   }
 

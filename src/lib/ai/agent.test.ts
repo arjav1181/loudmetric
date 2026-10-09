@@ -146,6 +146,17 @@ async function main() {
   r = await run(siteId, "summarise");
   expect("Twitter 47% flagged as ungrounded", r.ungrounded.includes(47), JSON.stringify(r.ungrounded));
 
+  console.log("\nanomaly detection is delegated, not eyeballed");
+  calls.length = 0;
+  stub([
+    [toolCall("anomalies", { explain: true }, "c1"), { type: "done", reason: "tool_calls" }],
+    [{ type: "done", reason: "stop" }],
+  ]);
+  r = await run(siteId, "what changed last week?");
+  expect("called the anomalies tool", calls.some((c) => c.name === "anomalies"));
+  expect("detector ran and returned a report", typeof r.steps[0]?.rows !== "undefined");
+  expect("numeric context captured for grounding", (r.steps[0]?.numericContext.length ?? 0) > 0);
+
   console.log("\nthe loop stops instead of spinning");
   calls.length = 0;
   const spin: StreamChunk[][] = Array.from({ length: 10 }, (_, i) => [

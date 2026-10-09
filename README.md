@@ -27,6 +27,10 @@ all.
   collects these.
 - **Section-level engagement.** Not "scrolled 60%" but *which section*, and
   for how long, based on which element was actually most visible.
+- **Anomaly detection that needs no model.** Each day is compared against the
+  *same weekday* over the previous 8 weeks, using median and median absolute
+  deviation. One viral day cannot inflate the baseline and hide the next spike,
+  and there is no API call, so it works with the AI layer switched off.
 - **Honest scoping.** Metrics that can only be stored all-time are labelled
   all-time. Nothing quietly implies a date filter applies to it.
 - **No identifier, on purpose.** Visitors are counted by a hash of IP + user
@@ -111,6 +115,14 @@ psql "$DATABASE_URL" -c "DELETE FROM sites WHERE name = 'Demo (fake data)'"
 | `npm run db:init` | Applies the schema. Safe to re-run. |
 | `npm run db:partitions` | Creates missing months, drops expired ones. Monthly cron. |
 | `npm run db:seed` | Synthetic demo traffic. |
+| `npm test` | Guard + grounding tests. No database needed. |
+| `npm run test:db -- <siteId>` | Proves Postgres refuses writes, with the static checker bypassed. |
+| `npm run test:agent -- <siteId>` | The copilot loop end to end, driven by a scripted model. |
+
+`npm run test:db -- <siteId> --bypass` is the one that matters most. It skips the
+regex layer entirely and fires INSERT/UPDATE/DELETE/DROP and a data-modifying
+CTE straight at the read-only transaction, so a green run means the *database*
+refused — not that the validation still works.
 
 `db:partitions` backfills **every** month from the retention floor to next month,
 not just next month. A fresh install has no partitions at all, and a site that
