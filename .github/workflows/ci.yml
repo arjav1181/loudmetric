@@ -1,0 +1,108 @@
+name: CI
+
+# Every job here is something that has already caught a real bug in this
+# repository, so none of it is ceremony. If a job never fails it should be
+# deleted, not kept for reassurance.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Cancel superseded runs on the same branch. A queue of stale builds is slower
+# than no CI at all for a repo where the feedback you want is fast feedback.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # npmjs.org explicitly, because the default registry intermittently served
+      # a truncated native binary in this project's development, which surfaced
+      # as an unexplained SIGBUS during `next build`. Pinning the registry turns
+      # a three-hour debugging session into a one-line fix.
+      - run: npm ci --registry=https://registry.npmjs.org/
+
+      - run: npm run typecheck
+
+      - name: unit tests
+        run: npm test
+
+      - name: build
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+
+      # A build that "succeeds" while omitting public/ leaves /loudmetric.js
+      # 404ing at runtime with no error anywhere. That happened, so it is
+      # asserted here rather than discovered by a user.
+      - name: verify the tracker survived the build
+        run: |
+          test -f .next/standalone/public/loudmetric.js \
+            || { echo "::error::standalone output is missing public/loudmetric.js"; exit 1; }
+          test -d .next/standalone/.next/static \
+            || { echo "::error::standalone output is missing .next/static"; exit 1; }
+          echo "tracker and static assets present in standalone output"
+
+  postgres:
+    runs-on: ubuntu-latest
+
+    # The database tests need a real Postgres, not a mock: the whole point is to
+    # prove the database itself refuses writes, which no mock can demonstrate.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: loudmetric
+          POSTGRES_PASSWORD: loudmetric
+          POSTGRES_DB: loudmetric
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U loudmetric"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --registry=https://registry.npmjs.org/
+
+      - name: apply schema and partitions
+        env:
+          DATABASE_URL: postgres://loudmetric:loudmetric@localhost:5432/loudmetric
+        run: |
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/schema.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/partition.sql
+
+      - name: seed
+        env:
+          DATABASE_URL: postgres://loudmetric:loudmetric@localhost:5432/loudmetric
+        run: npx tsx db/seed.ts
+
+      - name: read-only guarantee, with the static checker bypassed
+        env:
+          DATABASE_URL: postgres://loudmetric:loudmetric@localhost:5432/loudmetric
+        run: |
+          SITE=$(psql "$DATABASE_URL" -t -A -c "SELECT id FROM sites LIMIT 1")
+          npx tsx src/lib/sql-guard.db.test.ts "$SITE"
+          npx tsx src/lib/sql-guard.db.test.ts "$SITE" --bypass
+
+      - name: copilot agent loop, against real data with a scripted model
+        env:
+          DATABASE_URL: postgres://loudmetric:loudmetric@localhost:5432/loudmetric
+        run: |
+          SITE=$(psql "$DATABASE_URL" -t -A -c "SELECT id FROM sites LIMIT 1")
+          npx tsx src/lib/ai/agent.test.ts "$SITE"
