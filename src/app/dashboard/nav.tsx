@@ -13,6 +13,7 @@ const NAV: NavItem[] = [
   { href: "/dashboard/pages", label: "Pages", group: "Metrics" },
   { href: "/dashboard/engagement", label: "Engagement", group: "Metrics" },
   { href: "/dashboard/vitals", label: "Core Web Vitals", group: "Metrics" },
+  { href: "/dashboard/copilot", label: "Copilot", group: "Ask" },
   { href: "/dashboard/funnels", label: "Funnels", group: "Measure" },
   { href: "/dashboard/events", label: "Events", group: "Measure" },
   { href: "/dashboard/settings", label: "Settings", group: "Measure" },

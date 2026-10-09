@@ -11,7 +11,9 @@
     "typecheck": "tsc --noEmit",
     "db:init": "psql \"$DATABASE_URL\" -f db/schema.sql",
     "db:partitions": "psql \"$DATABASE_URL\" -f db/partition.sql",
-    "db:seed": "tsx db/seed.ts"
+    "db:seed": "tsx db/seed.ts",
+    "test": "tsx src/lib/sql-guard.test.ts && tsx src/lib/ai/grounding.test.ts",
+    "test:db": "tsx src/lib/sql-guard.db.test.ts"
   },
   "dependencies": {
     "next": "14.2.35",
@@ -24,7 +26,7 @@
     "@types/pg": "^8.11.10",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "typescript": "^5",
-    "tsx": "^4"
+    "tsx": "^4.23.15",
+    "typescript": "^5"
   }
 }
