@@ -1,0 +1,38 @@
+# LoudMetric — the whole thing, one command:
+#   git clone … && cd loudmetric && cp .env.example .env && docker compose up
+#
+# Then open http://localhost:3000 to create your first site and paste the
+# snippet. No external accounts, no API keys, no telemetry leaving this machine.
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: loudmetric
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-loudmetric}
+      POSTGRES_DB: loudmetric
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      # Mounted read-only so the container applies the schema at boot.
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U loudmetric -d loudmetric"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://loudmetric:${DB_PASSWORD:-loudmetric}@db:5432/loudmetric
+      INGEST_SALT: ${INGEST_SALT:-loudmetric-dev-salt}
+      SESSION_SECRET: ${SESSION_SECRET:-loudmetric-dev-session-secret}
+    ports:
+      - "${PORT:-3000}:3000"
+
+volumes:
+  db-data:

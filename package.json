@@ -1,0 +1,28 @@
+{
+  "name": "loudmetric",
+  "version": "0.1.0",
+  "private": false,
+  "license": "MIT",
+  "description": "Self-hosted, cookie-free analytics that tells you what people actually read, and how fast your site really is.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:init": "psql \"$DATABASE_URL\" -f db/schema.sql",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "14.2.35",
+    "pg": "^8.13.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/pg": "^8.11.10",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "typescript": "^5"
+  }
+}
