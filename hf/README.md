@@ -1,7 +1,7 @@
 ---
 title: LoudMetric
 emoji: 📊
-colorFrom: black
+colorFrom: gray
 colorTo: gray
 sdk: docker
 app_port: 7860
