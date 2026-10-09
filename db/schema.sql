@@ -61,7 +61,15 @@ CREATE INDEX IF NOT EXISTS site_bots_site_idx ON site_bots (site_id);
 --   type = 'heartbeat' | value = elapsed ms on page
 CREATE TABLE IF NOT EXISTS events (
   id            bigserial,
-  site_id       uuid NOT NULL,
+  -- ON DELETE CASCADE is load-bearing, not decoration. Without it, deleting a
+  -- site leaves its entire event history in the database forever: invisible to
+  -- the dashboard, still on disk, still growing. A FK check per insert costs an
+  -- index lookup, which the (site_id, type, occurred_at) index below already
+  -- serves — cheaper than the unbounded disk growth this prevents.
+  --
+  -- Note this FK lives on the partitioned parent, so Postgres enforces it once
+  -- per insert regardless of which partition receives the row.
+  site_id       uuid NOT NULL REFERENCES sites (id) ON DELETE CASCADE,
   occurred_at   timestamptz NOT NULL DEFAULT now(),
   type          text NOT NULL,
   -- Daily-rotating pseudonymous visitor. See note 1.

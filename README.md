@@ -88,6 +88,45 @@ setting a cookie. This one does not.
 
 ---
 
+## Try it before you have traffic
+
+```bash
+npm run db:seed     # ~91,000 synthetic events over 90 days
+```
+
+The seed writes a site called **"Demo (fake data)"** so it can never be mistaken
+for a real one. The data is modelled on a reading-heavy site *including the
+unflattering parts* — a ~57% bounce rate, mobile traffic that scrolls worse than
+desktop, and LCP that is bad on exactly the pages that get the most traffic. A
+dashboard that only shows good news is a screenshot, not a tool.
+
+```bash
+psql "$DATABASE_URL" -c "DELETE FROM sites WHERE name = 'Demo (fake data)'"
+```
+
+### Operations
+
+| Command | Does |
+|---|---|
+| `npm run db:init` | Applies the schema. Safe to re-run. |
+| `npm run db:partitions` | Creates missing months, drops expired ones. Monthly cron. |
+| `npm run db:seed` | Synthetic demo traffic. |
+
+`db:partitions` backfills **every** month from the retention floor to next month,
+not just next month. A fresh install has no partitions at all, and a site that
+imports history needs months that are already current — creating only the next
+month makes every insert in a gap fail with `no partition of relation found for
+row`, which is a miserable thing to debug from an error the tracker swallowed in
+a browser.
+
+Retention is 12 months and lives in Postgres rather than in shell `date`:
+
+```bash
+PGOPTIONS='-c loudmetric.keep_months=24' psql "$DATABASE_URL" -f db/partition.sql
+```
+
+---
+
 ## What it tracks
 
 | Type | What it means |
@@ -139,7 +178,9 @@ everything.
 tracker/loudmetric.js      one file, no dependencies, framework-agnostic
 src/app/api/ingest        the only write path
 db/schema.sql             Postgres, partitioned monthly
-src/app/…                 the dashboard
+src/app/dashboard/        the dashboard (7 views, no charting library)
+db/partition.sql          partition maintenance — run monthly
+db/seed.ts                synthetic demo traffic
 ```
 
 Two decisions worth explaining up front:
@@ -153,6 +194,16 @@ preflights in the first place.
 **Events are partitioned by month.** Analytics data is append-only and queried
 by time range. Partitioning keeps the hot window small and makes retention a
 matter of dropping a partition rather than deleting rows.
+
+**No charting library.** Recharts would add 150–400kB to render bars and a
+tooltip that is ~80 lines of SVG here, and the funnel those libraries ship with
+is a stack of tapered bars regardless. Every dashboard view is hand-built SVG, so
+the whole dashboard is under 100kB of JS.
+
+**`events.site_id` has a foreign key.** `ON DELETE CASCADE`, which is
+load-bearing: without it, deleting a site leaves its entire event history on disk
+forever — invisible to the dashboard, still growing. It is verified by test
+rather than assumed.
 
 ---
 

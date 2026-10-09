@@ -8,9 +8,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
     "db:init": "psql \"$DATABASE_URL\" -f db/schema.sql",
-    "typecheck": "tsc --noEmit"
+    "db:partitions": "psql \"$DATABASE_URL\" -f db/partition.sql",
+    "db:seed": "tsx db/seed.ts"
   },
   "dependencies": {
     "next": "14.2.35",
@@ -23,6 +24,7 @@
     "@types/pg": "^8.11.10",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "typescript": "^5"
+    "typescript": "^5",
+    "tsx": "^4"
   }
 }
