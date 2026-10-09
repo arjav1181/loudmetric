@@ -6,7 +6,7 @@
   "description": "Self-hosted, cookie-free analytics that tells you what people actually read, and how fast your site really is.",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && node scripts/finalize-standalone.mjs",
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "db:init": "psql \"$DATABASE_URL\" -f db/schema.sql",

@@ -35,6 +35,26 @@ function saltForDay(offsetDays = 0): string {
     .digest("hex");
 }
 
+/**
+ * Coarse device class, derived server-side.
+ *
+ * The dashboard has a Devices panel, and the honest way to fill it is to
+ * classify the user agent here rather than trust a value the page sent. A
+ * client-supplied `device` field is one line of JavaScript away from being
+ * wrong.
+ *
+ * Only the class is ever stored — never the raw user agent. A raw UA is a
+ * fingerprinting surface: combined with anything else it identifies people, and
+ * storing it would undercut the entire premise of this project. Three buckets is
+ * all a traffic table needs.
+ */
+function deviceClass(ua: string): "mobile" | "tablet" | "desktop" {
+  const u = ua.toLowerCase();
+  if (/ipad|tablet|playbook|silk|kindle/.test(u)) return "tablet";
+  if (/mobi|iphone|ipod|android|phone|windows ce|blackberry|opera mini/.test(u)) return "mobile";
+  return "desktop";
+}
+
 function hash(ip: string, ua: string, salt: string): string {
   return createHmac("sha256", salt).update(`${ip}|${ua}`).digest("hex").slice(0, 24);
 }
@@ -148,11 +168,16 @@ export async function POST(req: Request) {
 
     switch (type) {
       case "pageview":
-        props = { ti: String(x.ti || "").slice(0, 200) };
+        // Device is attached to every event type, not just pageviews: a
+        // session's device should not change when the visitor scrolls.
+        props = { ti: String(x.ti || "").slice(0, 200), device: deviceClass(ua) };
         break;
       case "event":
         name = String(x.n || "event").slice(0, 64);
-        props = x.x && typeof x.x === "object" ? (x.x as Record<string, unknown>) : null;
+        props = {
+          ...(x.x && typeof x.x === "object" ? (x.x as Record<string, unknown>) : {}),
+          device: deviceClass(ua),
+        };
         break;
       case "scroll":
         value = clampNum(x.v, 0, 100);

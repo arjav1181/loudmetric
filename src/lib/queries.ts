@@ -433,16 +433,18 @@ export async function getEvents(
   return res.rows;
 }
 
+/**
+ * Device split, from the coarse class computed at ingest.
+ *
+ * The raw user agent is never stored, so there is no UA sniffing fallback here
+ * and pretending otherwise would be dead code describing behaviour that does not
+ * happen. Three buckets is what this table can honestly support.
+ */
 export async function getDevices(siteId: string, range: Range) {
   const from = new Date(Date.now() - RANGE_MS[range]);
   const res = await getPool().query<{ kind: string; n: number }>(
     `SELECT
-       CASE
-         WHEN lower(coalesce(properties->>'device', '')) IN ('mobile', 'tablet', 'desktop') THEN properties->>'device'
-         WHEN lower(coalesce(properties->>'ua', '')) LIKE '%mobile%' THEN 'mobile'
-         WHEN lower(coalesce(properties->>'ua', '')) LIKE '%ipad%' OR lower(coalesce(properties->>'ua', '')) LIKE '%tablet%' THEN 'tablet'
-         ELSE 'desktop'
-       END AS kind,
+       coalesce(properties->>'device', 'unknown') AS kind,
        count(*)::int AS n
      FROM events
      WHERE site_id = $1 AND occurred_at >= $2 AND type = 'pageview'
