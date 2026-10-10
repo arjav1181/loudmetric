@@ -491,3 +491,102 @@ export async function getList<T extends Record<string, unknown>>(
   const res = await getPool().query<T>(sql, [siteId, from, ...params]);
   return res.rows;
 }
+
+/**
+ * Custom event with a numeric property, summed.
+ *
+ * The property is read as JSONB rather than a column, so this is not indexed and
+ * is only ever run over a single event name. That is a deliberate trade: making
+ * every arbitrary property indexable would mean a column per event type, which
+ * defeats the point of an open event schema.
+ */
+export async function getEventWithNumber(
+  siteId: string,
+  range: Range,
+  name: string,
+  prop: string,
+): Promise<{ total: number; count: number; avg: number | null }> {
+  const from = new Date(Date.now() - RANGE_MS[range]);
+  const res = await getPool().query<{ total: number; count: number }>(
+    `SELECT
+       coalesce(sum((properties->>$2)::numeric), 0)::bigint AS total,
+       count(*) FILTER (WHERE properties->>$2 IS NOT NULL)::int AS count
+     FROM events
+     WHERE site_id = $1 AND occurred_at >= $3
+       AND type = 'event' AND name = $4`,
+    [siteId, prop, from, name],
+  );
+  const row = res.rows[0];
+  return {
+    total: Number(row?.total ?? 0),
+    count: row?.count ?? 0,
+    avg: row?.count ? Math.round((Number(row.total) / row.count) * 10) / 10 : null,
+  };
+}
+
+/** Count of sessions in which a custom event fired at least once. */
+export async function getEventSessions(
+  siteId: string,
+  range: Range,
+  name: string,
+): Promise<number> {
+  const from = new Date(Date.now() - RANGE_MS[range]);
+  const res = await getPool().query<{ n: number }>(
+    `SELECT count(DISTINCT session_id)::int AS n
+     FROM events
+     WHERE site_id = $1 AND occurred_at >= $2 AND type = 'event' AND name = $3`,
+    [siteId, from, name],
+  );
+  return res.rows[0]?.n ?? 0;
+}
+
+/**
+ * Distribution of a bucketed property, for a funnel-shaped "how long do people
+ * play" view rather than a single average.
+ */
+export async function getEventBuckets(
+  siteId: string,
+  range: Range,
+  name: string,
+  prop: string,
+  order: string[],
+): Promise<{ band: string; n: number }[]> {
+  const from = new Date(Date.now() - RANGE_MS[range]);
+  const res = await getPool().query<{ band: string; n: number }>(
+    `SELECT properties->>$2 AS band, count(*)::int AS n
+     FROM events
+     WHERE site_id = $1 AND occurred_at >= $3
+       AND type = 'event' AND name = $4
+       AND properties->>$2 IS NOT NULL
+     GROUP BY 1`,
+    [siteId, prop, from, name],
+  );
+  const map = new Map(res.rows.map((r) => [r.band, r.n]));
+  return order.map((b) => ({ band: b, n: map.get(b) ?? 0 }));
+}
+
+/** Conversion: sessions with the event, against all sessions. */
+export async function getEventConversion(
+  siteId: string,
+  range: Range,
+  name: string,
+): Promise<{ sessions: number; withEvent: number; rate: number | null }> {
+  const from = new Date(Date.now() - RANGE_MS[range]);
+  const res = await getPool().query<{ sessions: number; with_event: number }>(
+    `WITH s AS (
+       SELECT DISTINCT session_id, name
+       FROM events
+       WHERE site_id = $1 AND occurred_at >= $2 AND type IN ('pageview', 'event')
+     )
+     SELECT count(DISTINCT session_id)::int AS sessions,
+            count(DISTINCT session_id) FILTER (WHERE name = $3)::int AS with_event
+     FROM s`,
+    [siteId, from, name],
+  );
+  const row = res.rows[0];
+  return {
+    sessions: row?.sessions ?? 0,
+    withEvent: row?.with_event ?? 0,
+    rate: row?.sessions ? Math.round((row.with_event / row.sessions) * 1000) / 10 : null,
+  };
+}
