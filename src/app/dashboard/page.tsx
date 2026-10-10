@@ -77,7 +77,7 @@ export default async function DashboardPage({
           <Panel
             title="Traffic"
             hint="Unique visitors are counted per day. Because the hash salt rotates daily, the same person cannot be counted as one visitor across two days — so this line is daily, never weekly uniques."
-            bodyClass="p-5"
+            dense
           >
             {series.length === 0 ? (
               <Empty>No pageviews in this range yet.</Empty>
@@ -106,7 +106,7 @@ export default async function DashboardPage({
             >
               <Bars
                 rows={pages.map((p) => ({
-                  label: p.path,
+                  name: p.path,
                   value: p.views,
                   hint: p.views.toLocaleString(),
                 }))}

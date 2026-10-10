@@ -63,11 +63,7 @@ export default async function SettingsPage({
                 No custom rules. Built-in signatures (headless browsers, known crawlers) always apply.
               </Empty>
             ) : (
-              <Table
-                head={["Pattern", "Kind"]}
-                align={["left", "right"]}
-                rows={bots.map((b) => [b.pattern, b.kind])}
-              />
+              <Table head={["Pattern", "Kind"]} rows={bots.map((b) => [b.pattern, b.kind])} />
             )}
           </Panel>
 

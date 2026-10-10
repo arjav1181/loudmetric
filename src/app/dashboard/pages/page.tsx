@@ -86,7 +86,7 @@ export default async function PagesPage({
             <Panel title="Devices" hint="From the tracker, falling back to user-agent sniffing.">
               <Bars
                 rows={devices.map((d) => ({
-                  label: d.kind,
+                  name: d.kind,
                   value: d.n,
                   hint: `${compact(d.n)} · ${Math.round((d.n / deviceTotal) * 100)}%`,
                 }))}
@@ -95,7 +95,7 @@ export default async function PagesPage({
 
             <Panel title="Referrers" hint="Bare host, so google.com covers /search and /ads.">
               <Bars
-                rows={referrers.map((r) => ({ label: r.referrer, value: r.views }))}
+                rows={referrers.map((r) => ({ name: r.referrer, value: r.views }))}
                 empty="No referrers recorded — likely all direct."
               />
             </Panel>

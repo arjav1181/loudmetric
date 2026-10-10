@@ -1,27 +1,42 @@
-:root { color-scheme: dark; }
-* { box-sizing: border-box; }
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Only the pieces the portfolio admin relies on that Tailwind cannot express
+ * inline. Everything else there is utilities, and the whole point of porting
+ * that UI is to keep it recognisably the same code.
+ */
+
+:root {
+  color-scheme: dark;
+}
+
+html,
 body {
-  margin: 0;
   background: #000;
   color: #fff;
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
-a { color: #fff; }
-.wrap { max-width: 60rem; margin: 0 auto; padding: 3rem 1.25rem 5rem; }
-.mono { font-family: ui-monospace, "JetBrains Mono", Menlo, monospace; }
-.label { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: rgba(255,255,255,.4); }
-.h1 { font-size: clamp(1.8rem, 5vw, 2.75rem); font-weight: 800; letter-spacing: -.02em; margin: .5rem 0 0; }
-.sub { color: rgba(255,255,255,.55); line-height: 1.65; }
-.card { border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.02); padding: 1.25rem; margin-top: 1rem; }
-.btn { border: 1px solid rgba(255,255,255,.22); background: transparent; color: #fff; padding: .7rem 1.1rem; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
-.btn:hover { border-color: rgba(255,255,255,.5); }
-.btn:disabled { opacity: .45; cursor: not-allowed; }
-input { width: 100%; border: 1px solid rgba(255,255,255,.12); background: rgba(0,0,0,.4); color: #fff; padding: .7rem .8rem; font-size: 14px; outline: none; }
-input:focus { border-color: rgba(255,255,255,.4); }
-pre { overflow-x: auto; border: 1px solid rgba(255,255,255,.1); background: rgba(0,0,0,.5); padding: 1rem; font-size: 12px; line-height: 1.7; color: rgba(255,255,255,.8); }
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-th { text-align: left; font-size: 10px; letter-spacing: .15em; text-transform: uppercase; color: rgba(255,255,255,.35); border-bottom: 1px solid rgba(255,255,255,.1); padding-bottom: .5rem; }
-td { padding: .6rem 0; border-bottom: 1px solid rgba(255,255,255,.05); }
-.err { color: #fca5a5; font-size: 13px; }
-.ok { color: #86efac; font-size: 13px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 1ms !important;
+    animation-duration: 1ms !important;
+  }
+}
+
+/*
+ * The one class that earns its own rule: a monospace numeral stack. Used
+ * everywhere in the dashboard, and the whole reason it exists is that a value
+ * changing from 999 to 1,000 must not shift the column beside it.
+ */
+@layer components {
+  .lm-mono {
+    font-family: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+}

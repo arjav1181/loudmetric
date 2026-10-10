@@ -64,7 +64,7 @@ export default async function EventsPage({
           ) : (
             <Bars
               rows={events.map((e) => ({
-                label: e.name,
+                name: e.name,
                 value: e.count,
                 hint: `${compact(e.count)} · ${sessions > 0 ? Math.round((e.sessions / sessions) * 100) : 0}% of sessions`,
               }))}

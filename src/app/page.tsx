@@ -60,19 +60,19 @@ export default function Home() {
     `<script\n  async\n  src="${origin}/loudmetric.js"\n  data-site="${key}"\n  data-endpoint="${origin}/api/ingest"\n></script>`;
 
   return (
-    <div className="wrap">
-      <p className="label">Self-hosted · cookie-free · MIT</p>
-      <h1 className="h1">LoudMetric</h1>
-      <p className="sub" style={{ maxWidth: "42rem", marginTop: "1rem" }}>
+    <div className="mx-auto w-full max-w-[60rem] px-5 py-12">
+      <p className="text-[10px] font-medium tracking-[0.2em] text-white/40 uppercase">Self-hosted · cookie-free · MIT</p>
+      <h1 className="mt-2 text-[clamp(1.8rem,5vw,2.75rem)] font-extrabold tracking-[-0.02em]">LoudMetric</h1>
+      <p className="text-[13px] leading-relaxed text-white/55" style={{ maxWidth: "42rem", marginTop: "1rem" }}>
         Analytics that tells you what people actually read, and how fast your site really is —
         without setting a cookie or sending anyone a single byte about them.
       </p>
 
-      <div className="card" style={{ marginTop: "2rem" }}>
-        <p className="label">Add a site</p>
+      <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-5" style={{ marginTop: "2rem" }}>
+        <p className="text-[10px] font-medium tracking-[0.2em] text-white/40 uppercase">Add a site</p>
         <form onSubmit={create} style={{ display: "grid", gap: ".75rem", marginTop: ".9rem" }}>
           <div>
-            <label className="label" htmlFor="name" style={{ display: "block", marginBottom: ".4rem" }}>
+            <label className="text-[10px] font-medium tracking-[0.2em] text-white/40 uppercase" htmlFor="name" style={{ display: "block", marginBottom: ".4rem" }}>
               Name
             </label>
             <input
@@ -83,7 +83,7 @@ export default function Home() {
             />
           </div>
           <div>
-            <label className="label" htmlFor="domain" style={{ display: "block", marginBottom: ".4rem" }}>
+            <label className="text-[10px] font-medium tracking-[0.2em] text-white/40 uppercase" htmlFor="domain" style={{ display: "block", marginBottom: ".4rem" }}>
               Domain (optional)
             </label>
             <input
@@ -94,20 +94,20 @@ export default function Home() {
             />
           </div>
           <div>
-            <button type="submit" className="btn" disabled={busy || !name.trim()}>
+            <button type="submit" className="rounded-md border border-white/20 bg-transparent px-4 py-2.5 font-mono text-[11px] tracking-[0.12em] uppercase transition-colors hover:border-white/50 disabled:cursor-not-allowed disabled:opacity-45" disabled={busy || !name.trim()}>
               {busy ? "Creating…" : "Create site"}
             </button>
           </div>
         </form>
-        {err ? <p className="err" style={{ marginTop: ".8rem" }}>{err}</p> : null}
+        {err ? <p className="text-[12px] text-red-300/90" style={{ marginTop: ".8rem" }}>{err}</p> : null}
       </div>
 
-      <div className="card">
-        <p className="label">Your sites</p>
+      <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-5">
+        <p className="text-[10px] font-medium tracking-[0.2em] text-white/40 uppercase">Your sites</p>
         {loading ? (
-          <p className="sub" style={{ marginTop: ".8rem" }}>Loading…</p>
+          <p className="text-[13px] leading-relaxed text-white/55" style={{ marginTop: ".8rem" }}>Loading…</p>
         ) : sites.length === 0 ? (
-          <p className="sub" style={{ marginTop: ".8rem" }}>
+          <p className="text-[13px] leading-relaxed text-white/55" style={{ marginTop: ".8rem" }}>
             No sites yet. Create one above and paste the snippet into your <code>&lt;head&gt;</code>.
           </p>
         ) : (
@@ -120,7 +120,7 @@ export default function Home() {
                 </p>
                 <pre>{snippet(s.write_key)}</pre>
                 <div
-                  className="mono"
+                  className="lm-mono"
                   style={{
                     fontSize: 11,
                     color: "rgba(255,255,255,.3)",
@@ -156,16 +156,16 @@ export default function Home() {
         )}
       </div>
 
-      <div className="card" style={{ marginTop: "2rem" }}>
-        <p className="label">Where the data goes</p>
-        <p className="sub" style={{ marginTop: ".7rem" }}>
+      <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-5" style={{ marginTop: "2rem" }}>
+        <p className="text-[10px] font-medium tracking-[0.2em] text-white/40 uppercase">Where the data goes</p>
+        <p className="text-[13px] leading-relaxed text-white/55" style={{ marginTop: ".7rem" }}>
           Every site above has a full dashboard: traffic, pages, scroll depth, section engagement,
           real Core Web Vitals, funnels, events, and anomaly detection. Open it from the button
           beside any site.
         </p>
       </div>
 
-      <p className="sub" style={{ marginTop: "2rem", fontSize: 13 }}>
+      <p className="text-[13px] leading-relaxed text-white/55" style={{ marginTop: "2rem", fontSize: 13 }}>
         No cookies. No fingerprinting. IPs are hashed against a salt that rotates daily, so
         yesterday&rsquo;s visitors cannot be joined to today&rsquo;s.{" "}
         <a href="https://github.com/arjav1181/loudmetric" style={{ textDecoration: "underline" }}>

@@ -1,7 +1,5 @@
-import Link from "next/link";
 import { getPool } from "@/lib/db";
 import type { Range } from "@/lib/queries";
-import { LABEL } from "./ui";
 
 export const dynamic = "force-dynamic";
 
@@ -21,8 +19,8 @@ export function rangeHref(base: string, siteId: string, range: Range): string {
 }
 
 /**
- * Page header shared by every dashboard view: which site, which window, and
- * the honest label for what that window can and cannot tell you.
+ * Page header shared by every dashboard view: which site, which window, and the
+ * honest label for what that window can and cannot tell you.
  */
 export function Header({
   siteId,
@@ -41,27 +39,27 @@ export function Header({
   base?: string;
 }) {
   return (
-    <header className="border-b border-white/[0.06] px-5 py-4 sm:px-7">
+    <header className="border-b border-white/10 px-3 py-4 sm:px-4 lg:px-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className={LABEL}>{siteName}</p>
-          <h1 className="mt-1.5 text-[22px] font-bold tracking-tight">{title}</h1>
+          <p className="text-[10px] font-medium tracking-[0.2em] text-white/40 uppercase">{siteName}</p>
+          <h1 className="mt-1.5 text-[22px] font-bold tracking-[-0.02em]">{title}</h1>
           {sub ? <p className="mt-1.5 max-w-2xl text-[13px] leading-relaxed text-white/40">{sub}</p> : null}
         </div>
-        <div className="flex shrink-0 items-center gap-1 rounded-lg border border-white/[0.08] bg-white/[0.02] p-1">
+        <div className="flex shrink-0 items-center gap-1 rounded-lg border border-white/10 bg-white/[0.02] p-1">
           {RANGES.map((r) => (
-            <Link
+            <a
               key={r.key}
               href={rangeHref(base, siteId, r.key)}
+              aria-current={r.key === range ? "true" : undefined}
               className={`rounded-md px-2.5 py-1 font-mono text-[11px] tabular-nums transition-colors ${
                 r.key === range
                   ? "bg-white/[0.1] text-white"
                   : "text-white/40 hover:text-white/70"
               }`}
-              aria-current={r.key === range ? "true" : undefined}
             >
               {r.label}
-            </Link>
+            </a>
           ))}
         </div>
       </div>
@@ -71,8 +69,8 @@ export function Header({
 
 /**
  * Resolves the site from `?site=`. Falls back to the oldest site so a bare
- * `/dashboard` link still shows something instead of an error — a self-hosted
- * tool with exactly one site should not require a URL parameter to be usable.
+ * `/dashboard` still shows something instead of an error — a self-hosted tool
+ * with exactly one site should not require a URL parameter to be usable.
  */
 export async function resolveSite(siteParam: string | undefined): Promise<{
   id: string;
@@ -103,12 +101,9 @@ export function NoSite() {
         Create a site to start collecting events. You need a running Postgres and a site row
         before any metric here means anything.
       </p>
-      <Link
-        href="/"
-        className="mt-2 rounded-md border border-white/15 px-3 py-1.5 font-mono text-[11px] tracking-[0.12em] uppercase transition-colors hover:border-white/40"
-      >
+      <a href="/" className="mt-2 rounded-md border border-white/20 px-3 py-1.5 font-mono text-[11px] tracking-[0.12em] uppercase transition-colors hover:border-white/40">
         Go to sites
-      </Link>
+      </a>
     </div>
   );
 }
@@ -121,9 +116,11 @@ export function DbDown({ detail }: { detail?: string }) {
         LoudMetric could not reach Postgres. Nothing here is estimated or cached — an analytics
         tool that shows stale numbers without saying so is worse than one that shows nothing.
       </p>
-      {detail ? <pre className="mono max-w-xl overflow-x-auto text-[11px] text-white/25">{detail}</pre> : null}
-      <p className="font-mono text-[11px] text-white/25">
-        Check that the container is up and <code className="text-white/40">db/schema.sql</code> was applied.
+      {detail ? (
+        <pre className="lm-mono max-w-xl overflow-x-auto text-[11px] text-white/25">{detail}</pre>
+      ) : null}
+      <p className="font-mono text-[10px] text-white/25">
+        Check that the container is up and <code>db/schema.sql</code> was applied.
       </p>
     </div>
   );
