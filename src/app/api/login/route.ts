@@ -1,12 +1,18 @@
 import { NextResponse } from "next/server";
 import { redirect } from "next/navigation";
 import { getPool } from "@/lib/db";
-import { verifyPassword, createSessionCookie } from "@/lib/auth";
+import { verifyPassword, createSessionCookie, assertAuthConfigured } from "@/lib/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
+  try {
+    assertAuthConfigured();
+  } catch {
+    return NextResponse.redirect(new URL("/login?error=Server%20is%20misconfigured", req.url), 303);
+  }
+
   const form = await req.formData().catch(() => null);
   const email = String(form?.get("email") ?? "").toLowerCase().trim();
   const password = String(form?.get("password") ?? "");

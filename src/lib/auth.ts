@@ -1,5 +1,7 @@
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { NextResponse } from "next/server";
 import { getPool } from "@/lib/db";
 
 /**
@@ -28,6 +30,19 @@ const COOKIE = "lm_session";
 const MAX_AGE_S = 60 * 60 * 24 * 30; // 30 days
 
 export type User = { id: string; email: string };
+
+/**
+ * Validate configuration without throwing.
+ *
+ * Used to fail a request BEFORE it writes anything. An earlier version created
+ * the operator row and only then hit the weak-secret guard when signing the
+ * session, leaving an account that exists, has no session, and cannot be
+ * re-created because bootstrap correctly refuses to run twice. Configuration
+ * checks belong at the top of the request, not at the bottom.
+ */
+export function assertAuthConfigured(): void {
+  secret();
+}
 
 function secret(): string {
   const s = process.env.SESSION_SECRET;
@@ -159,4 +174,54 @@ export async function ensureBootstrapUser(
     [res.rows[0].id],
   );
   return { created: true };
+}
+/**
+ * Require a signed-in operator.
+ *
+ * Redirects rather than throwing, so every page under the dashboard is covered
+ * by one call in the layout instead of a check in each of eight files. Missing
+ * one is not a subtle bug, it is an open dashboard.
+ *
+ * The redirect carries the original path so the login form can send you back to
+ * where you were going rather than dumping you on the overview.
+ */
+export async function requireUser(returnTo?: string): Promise<User> {
+  const user = await getCurrentUser();
+  if (user) return user;
+  const target = returnTo ? `?next=${encodeURIComponent(returnTo)}` : "";
+  redirect(`/login${target}`);
+}
+
+/**
+ * Same check for a route handler.
+ *
+ * Returns a NextResponse instead of redirecting, because a fetch() following a
+ * 303 into an HTML login page produces a confusing parse error rather than a
+ * clear 401.
+ */
+export async function requireUserApi(): Promise<User | NextResponse> {
+  const user = await getCurrentUser();
+  if (user) return user;
+  return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
+}
+
+/** True when the returned value is the error response rather than the user. */
+export function isAuthError(v: User | NextResponse): v is NextResponse {
+  return v instanceof NextResponse;
+}
+
+/**
+ * Authorise a site id for this user.
+ *
+ * Separate from requireUser because knowing who someone are is not the same as
+ * being allowed to read a given site — the moment there is more than one
+ * operator, every endpoint taking a siteId from the browser has to check it.
+ */
+export async function requireSiteAccess(
+  userId: string,
+  siteId: string | null | undefined,
+): Promise<boolean> {
+  if (!siteId) return false;
+  const allowed = await allowedSiteIds(userId);
+  return allowed.includes(siteId);
 }

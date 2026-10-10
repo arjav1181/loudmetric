@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getPool } from "@/lib/db";
 import { createGoal, deleteGoal, listGoals, goalProperties } from "@/lib/goals";
+import { getCurrentUser, allowedSiteIds } from "@/lib/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,12 +26,13 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
   if (!body.siteId) return NextResponse.json({ error: "siteId is required" }, { status: 400 });
 
-  const site = await getPool()
-    .query("SELECT 1 FROM sites WHERE id = $1 AND archived_at IS NULL", [body.siteId])
-    .catch(() => null);
-  if (!site?.rowCount) {
+  // Both checks: a valid session, AND this operator may touch this site.
+  const allowed = await allowedSiteIds(user.id);
+  if (!allowed.includes(body.siteId)) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
@@ -48,8 +50,14 @@ export async function POST(req: Request) {
 }
 
 export async function GET(req: Request) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
   const siteId = new URL(req.url).searchParams.get("siteId");
   if (!siteId) return NextResponse.json({ error: "siteId is required" }, { status: 400 });
+  const allowed = await allowedSiteIds(user.id);
+  if (!allowed.includes(siteId)) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
   const goals = await listGoals(siteId);
   const props = await goalProperties(goals.map((g) => g.id));
   return NextResponse.json({
@@ -63,6 +71,12 @@ export async function DELETE(req: Request) {
   const goalId = url.searchParams.get("id");
   if (!siteId || !goalId) {
     return NextResponse.json({ error: "siteId and id are required" }, { status: 400 });
+  }
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
+  const allowed = await allowedSiteIds(user.id);
+  if (!allowed.includes(siteId)) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
   // Cascades to goal_properties. Events are deliberately left alone: deleting a
   // goal removes the declaration, not the history it produced.

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getPool } from "@/lib/db";
+import { getCurrentUser, allowedSiteIds } from "@/lib/auth";
 
 /**
  * POST /api/sites — create a site, return its write key.
@@ -13,15 +14,25 @@ import { getPool } from "@/lib/db";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+/**
+ * This endpoint returns WRITE KEYS. Leaking it means letting anyone mint events
+ * against someone's analytics, so it is behind a session and scoped to the
+ * sites that operator may actually read — not merely to any logged-in user.
+ */
 export async function GET() {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
   try {
+    const allowed = await allowedSiteIds(user.id);
+    if (!allowed.length) return NextResponse.json({ sites: [] });
     const res = await getPool().query(
-      `SELECT s.id, s.name, s.domain, s.created_at,
+      `SELECT s.id, s.name, s.domain, s.created_at, s.write_key,
               (SELECT count(*) FROM events e WHERE e.site_id = s.id) AS events
          FROM sites s
-        WHERE s.archived_at IS NULL
+        WHERE s.archived_at IS NULL AND s.id = ANY($1::uuid[])
         ORDER BY s.created_at DESC
         LIMIT 200`,
+      [allowed],
     );
     return NextResponse.json({ sites: res.rows });
   } catch (err) {
@@ -33,6 +44,8 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
   let body: { name?: unknown; domain?: unknown };
   try {
     body = await req.json();
@@ -48,6 +61,10 @@ export async function POST(req: Request) {
     const res = await getPool().query(
       "INSERT INTO sites (name, domain) VALUES ($1, $2) RETURNING id, name, domain, write_key",
       [name, domain],
+    );
+    await getPool().query(
+      "INSERT INTO user_sites (user_id, site_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+      [user.id, res.rows[0].id],
     );
     return NextResponse.json({ site: res.rows[0] }, { status: 201 });
   } catch (err) {

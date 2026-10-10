@@ -20,6 +20,10 @@ export default function Home() {
       try {
         const res = await fetch("/api/sites");
         const data = await res.json();
+        if (res.status === 401) {
+          setErr("Sign in to see your sites.");
+          return;
+        }
         if (res.ok) setSites(data.sites || []);
         else setErr(data.message || "Could not reach the database. Is it running?");
       } catch {
@@ -100,6 +104,9 @@ export default function Home() {
           </div>
         </form>
         {err ? <p className="text-[12px] text-red-300/90" style={{ marginTop: ".8rem" }}>{err}</p> : null}
+          {err === "Sign in to see your sites." ? (
+            <a href="/login" className="geist-btn geist-btn-primary mt-3">Sign In</a>
+          ) : null}
       </div>
 
       <div className="geist-panel p-5">

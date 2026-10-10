@@ -5,37 +5,21 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Liveness and readiness in one endpoint, because the Space healthcheck needs to
- * distinguish them.
+ * Liveness only.
  *
- * Reports the age of the newest event alongside the database state. On the
- * Hugging Face deployment that number is the honest signal that the dataset sync
- * is working — if it stops advancing while the Space is awake, the sync loop is
- * broken and nobody would otherwise notice until the next restart lost the data.
+ * Public on purpose — the Docker healthcheck and the Space status both need it —
+ * but it says nothing but "is the database answering". No counts, no site
+ * names, no timestamps. On an indexed Space a public event count is a free
+ * disclosure of someone's traffic volume to whoever happens to ask.
+ *
+ * Operational detail lives on /api/health/details and needs a session.
  */
 export async function GET() {
   const started = Date.now();
   try {
-    const res = await getPool().query<{ newest: Date | null; events: number }>(
-      `SELECT max(occurred_at) AS newest, count(*)::int AS events FROM events`,
-    );
-    const row = res.rows[0];
-    return NextResponse.json({
-      ok: true,
-      db: "up",
-      events: row.events,
-      newestEvent: row.newest ? row.newest.toISOString() : null,
-      checkMs: Date.now() - started,
-    });
-  } catch (err) {
-    return NextResponse.json(
-      {
-        ok: false,
-        db: "down",
-        error: err instanceof Error ? err.message : "unknown",
-        checkMs: Date.now() - started,
-      },
-      { status: 503 },
-    );
+    await getPool().query("SELECT 1");
+    return NextResponse.json({ ok: true, db: "up", checkMs: Date.now() - started });
+  } catch {
+    return NextResponse.json({ ok: false, db: "down", checkMs: Date.now() - started }, { status: 503 });
   }
 }

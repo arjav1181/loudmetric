@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { getPool } from "@/lib/db";
 import { getLiveVisitors } from "@/lib/queries";
+import { requireUser } from "@/lib/auth";
 import { Nav } from "./nav";
 
 export const dynamic = "force-dynamic";
@@ -18,11 +19,15 @@ export const dynamic = "force-dynamic";
  * range-scoped data, so the layout does not do the panel's work twice.
  */
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const sites = await listSites();
+  // One gate for the whole subtree. Every view is force-dynamic, so this runs on
+  // every request — a cached authenticated page would be the worst possible
+  // outcome for a panel whose job is showing current numbers.
+  const user = await requireUser();
+  const sites = await listSites(user.id);
   const first = sites[0]?.id ?? null;
   const [live, events] = await Promise.all([
     first ? getLiveVisitors(first, 5).catch(() => ({ active: 0, pages: 0 })) : { active: 0, pages: 0 },
-    countEvents().catch(() => 0),
+    countEvents(user.id).catch(() => 0),
   ]);
 
   return (
@@ -123,10 +128,15 @@ function StatusDot({
   );
 }
 
-async function listSites(): Promise<{ id: string; name: string }[]> {
+async function listSites(userId: string): Promise<{ id: string; name: string }[]> {
   try {
+    // Scoped to this operator's sites rather than every site in the instance.
     const res = await getPool().query<{ id: string; name: string }>(
-      "SELECT id, name FROM sites WHERE archived_at IS NULL ORDER BY created_at LIMIT 100",
+      `SELECT s.id, s.name FROM sites s
+         JOIN user_sites us ON us.site_id = s.id
+        WHERE s.archived_at IS NULL AND us.user_id = $1
+        ORDER BY s.created_at LIMIT 100`,
+      [userId],
     );
     return res.rows;
   } catch {
@@ -134,7 +144,13 @@ async function listSites(): Promise<{ id: string; name: string }[]> {
   }
 }
 
-async function countEvents(): Promise<number> {
-  const res = await getPool().query<{ n: number }>("SELECT count(*)::int AS n FROM events");
+/** Scoped to this operator's sites, since the layout renders every site. */
+async function countEvents(userId: string): Promise<number> {
+  const res = await getPool().query<{ n: number }>(
+    `SELECT count(*)::int AS n FROM events e
+       JOIN user_sites us ON us.site_id = e.site_id
+      WHERE us.user_id = $1`,
+    [userId],
+  );
   return res.rows[0]?.n ?? 0;
 }
