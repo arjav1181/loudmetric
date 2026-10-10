@@ -9,7 +9,8 @@ import {
 } from "@/lib/queries";
 import { compact, formatVital, gradeVital, METRICS, GRADE_DOT, GRADE_TEXT } from "@/lib/vitals";
 import { AnomalyPanel } from "./AnomalyPanel";
-import { InteractiveBars, FunnelChart } from "./charts";
+import { TrafficChart, CategoryBars } from "./recharts";
+import { FunnelChart } from "./charts";
 import { Panel, Stat, Bars, Table, Empty, Delta } from "./ui";
 import { Header, NoSite, parseRange, resolveSite } from "./shell";
 
@@ -98,15 +99,13 @@ export default async function DashboardPage({
               {series.length === 0 ? (
                 <Empty label="No data in this range." />
               ) : (
-                <InteractiveBars
-                  points={series.map((p) => ({
+                <TrafficChart
+                  data={series.map((p) => ({
                     label: p.t.slice(5, 10),
-                    value: p.pageviews,
-                    secondary: p.visitors,
+                    views: p.pageviews,
+                    uniques: p.visitors,
                   }))}
-                  primary="views"
-                  secondary="unique"
-                  height={170}
+                  height={190}
                 />
               )}
             </Panel>

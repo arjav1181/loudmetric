@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
+import type { LucideIcon } from "lucide-react";
+
 type Item = { href: string; label: string; group: string };
 
 /**
@@ -13,6 +15,12 @@ type Item = { href: string; label: string; group: string };
  * rail never disappears on mobile; it becomes a horizontally scrollable strip,
  * because a nav that hides below a breakpoint is a nav people cannot find.
  */
+
+/** Resolve the icon outside the list so the map does not run per render. */
+function NavIcon({ label }: { label: string }) {
+  const Icon = ICONS[label] ?? LayoutDashboard;
+  return <Icon className="size-4 shrink-0" strokeWidth={1.5} aria-hidden="true" />;
+}
 
 export const NAV: Item[] = [
   { href: "/dashboard", label: "Overview", group: "Analytics" },
@@ -25,32 +33,27 @@ export const NAV: Item[] = [
   { href: "/dashboard/settings", label: "Settings", group: "Measure" },
 ];
 
-function Glyph({ d }: { d: string }) {
-  return (
-    <svg
-      viewBox="0 0 16 16"
-      className="h-4 w-4 shrink-0"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d={d} />
-    </svg>
-  );
-}
+import {
+  LayoutDashboard,
+  FileText,
+  MousePointerClick,
+  Gauge,
+  Sparkles,
+  Filter,
+  Tag,
+  Settings,
+} from "lucide-react";
 
-const ICONS: Record<string, string> = {
-  Overview: "M2 13V3M2 13h12M5 10.5l3-4 3 2 2.5-4",
-  Pages: "M4 2h5l3 3v9H4zM9 2v3h3M6 8h4M6 10.5h4",
-  Engagement: "M3 2l4.5 11 1.8-4.2L13.5 7 3 2z",
-  "Core Web Vitals": "M8 2a6 6 0 104.2 10.2M8 5v3l2 1.5",
-  Copilot: "M8 1.5l1.6 4.4 4.4 1.6-4.4 1.6L8 13.5 6.4 9.1 2 7.5l4.4-1.6z",
-  Funnels: "M2 3h12l-4.5 5v5l-3 1.5V8z",
-  Events: "M5 10.5l3-4 3 2 2.5-4M2 13V3M2 13h12",
-  Settings: "M10.5 2.5a3.5 3.5 0 00-4.6 4.7L2 11l1.5 1.5 3.9-3.9a3.5 3.5 0 004.7-4.6L10 6.2 7.8 4",
+/** lucide at 16px with a 1.5 stroke is the same icon language Geist uses. */
+const ICONS: Record<string, LucideIcon> = {
+  Overview: LayoutDashboard,
+  Pages: FileText,
+  Engagement: MousePointerClick,
+  "Core Web Vitals": Gauge,
+  Copilot: Sparkles,
+  Funnels: Filter,
+  Events: Tag,
+  Settings,
 };
 
 export function Nav({ horizontal }: { horizontal?: boolean }) {
@@ -120,7 +123,7 @@ export function Nav({ horizontal }: { horizontal?: boolean }) {
                       : "text-white/55 hover:bg-white/[0.06] hover:text-white"
                   }`}
                 >
-                  <Glyph d={ICONS[i.label] ?? ICONS.Overview} />
+                  <NavIcon label={i.label} />
                   {i.label}
                 </Link>
               </li>
