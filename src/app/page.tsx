@@ -128,6 +128,15 @@ export default function Home() {
         )}
       </div>
 
+      <div className="card" style={{ marginTop: "2rem" }}>
+        <p className="label">Where the data goes</p>
+        <p className="sub" style={{ marginTop: ".7rem" }}>
+          Every site above has a full dashboard: traffic, pages, scroll depth, section engagement,
+          real Core Web Vitals, funnels, events, and anomaly detection. Open it from the button
+          beside any site.
+        </p>
+      </div>
+
       <p className="sub" style={{ marginTop: "2rem", fontSize: 13 }}>
         No cookies. No fingerprinting. IPs are hashed against a salt that rotates daily, so
         yesterday&rsquo;s visitors cannot be joined to today&rsquo;s.{" "}
