@@ -119,9 +119,37 @@ export default function Home() {
                   {s.domain ? <span style={{ color: "rgba(255,255,255,.35)", fontWeight: 400 }}> · {s.domain}</span> : null}
                 </p>
                 <pre>{snippet(s.write_key)}</pre>
-                <p className="mono" style={{ fontSize: 11, color: "rgba(255,255,255,.3)", marginTop: ".5rem" }}>
-                  key {s.write_key} · <a href={`/sites/${s.id}`}>open dashboard →</a>
-                </p>
+                <div
+                  className="mono"
+                  style={{
+                    fontSize: 11,
+                    color: "rgba(255,255,255,.3)",
+                    marginTop: ".6rem",
+                    display: "flex",
+                    flexWrap: "wrap",
+                    alignItems: "center",
+                    gap: "12px",
+                  }}
+                >
+                  <span>key {s.write_key}</span>
+                  <a
+                    href={`/dashboard?site=${s.id}`}
+                    style={{
+                      border: "1px solid rgba(255,255,255,.22)",
+                      borderRadius: 5,
+                      padding: "4px 9px",
+                      color: "rgba(255,255,255,.75)",
+                      textTransform: "uppercase",
+                      letterSpacing: ".1em",
+                      textDecoration: "none",
+                    }}
+                  >
+                    Open dashboard
+                  </a>
+                  <a href={`/sites/${s.id}`} style={{ textDecoration: "none" }}>
+                    event log →
+                  </a>
+                </div>
               </div>
             ))}
           </div>
