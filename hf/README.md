@@ -39,6 +39,30 @@ Dataset repo on a schedule and restored on boot. That is the mechanism Hugging
 Face recommends, and it is the only safe one: a live `PGDATA` directory cannot
 round-trip through git and LFS without corrupting.
 
+## Secrets you must set
+
+The Space will not start serving authenticated requests without these. Both go
+in **Settings → Secrets**:
+
+| Secret | Value | Why |
+| --- | --- | --- |
+| `SESSION_SECRET` | `openssl rand -hex 32` | Signs the session cookie. The app **refuses to sign** anything shorter than 16 characters, and login reports "Server is misconfigured" rather than falling back to a forgeable default. |
+| `INGEST_SALT` | any long random string | Daily salt for hashing visitor IPs. It rotates every day regardless, but a fixed secret here is what makes the rotation mean anything. |
+| `HF_TOKEN` | your Hugging Face token | Lets the sync loop write dumps to the dataset. |
+| `HF_DATASET_ID` | `abc1181/loudmetric-data` | Which dataset receives the dumps. |
+
+Optional but recommended, because it makes redirects correct even if a proxy
+stops forwarding headers:
+
+| Variable | Value |
+| --- | --- |
+| `PUBLIC_ORIGIN` | `https://abc1181-loudmetric.hf.space` |
+
+Without it, redirect targets are derived from `X-Forwarded-Host`/`Host`. That
+works behind the Space's proxy, but a container whose own address is
+`0.0.0.0` cannot work it out on its own — which is why an early version sent
+every login redirect to `http://0.0.0.0:7860`.
+
 ## Using it
 
 1. Visit the Space. On first run it asks you to create an account — that form

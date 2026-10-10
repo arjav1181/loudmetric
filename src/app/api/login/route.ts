@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { redirectUrl } from "@/lib/origin";
 import { redirect } from "next/navigation";
 import { getPool } from "@/lib/db";
 import { verifyPassword, createSessionCookie, assertAuthConfigured } from "@/lib/auth";
@@ -10,14 +11,14 @@ export async function POST(req: Request) {
   try {
     assertAuthConfigured();
   } catch {
-    return NextResponse.redirect(new URL("/login?error=Server%20is%20misconfigured", req.url), 303);
+    return NextResponse.redirect(new URL(redirectUrl(req, "/login?error=Server%20is%20misconfigured")), 303);
   }
 
   const form = await req.formData().catch(() => null);
   const email = String(form?.get("email") ?? "").toLowerCase().trim();
   const password = String(form?.get("password") ?? "");
 
-  const fail = NextResponse.redirect(new URL("/login?error=wrong", req.url), 303);
+  const fail = NextResponse.redirect(new URL(redirectUrl(req, "/login?error=wrong")), 303);
 
   if (!email || !password) return fail;
 
@@ -36,5 +37,5 @@ export async function POST(req: Request) {
   if (!user || !ok) return fail;
 
   await createSessionCookie(user.id);
-  return NextResponse.redirect(new URL("/dashboard", req.url), 303);
+  return NextResponse.redirect(new URL(redirectUrl(req, "/dashboard")), 303);
 }

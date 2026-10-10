@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { redirectUrl } from "@/lib/origin";
 import { getPool } from "@/lib/db";
 import { ensureBootstrapUser, createSessionCookie, assertAuthConfigured } from "@/lib/auth";
 
@@ -19,7 +20,7 @@ export async function POST(req: Request) {
     assertAuthConfigured();
   } catch {
     return NextResponse.redirect(
-      new URL("/login?error=Server%20is%20misconfigured", req.url),
+      new URL(redirectUrl(req, "/login?error=Server%20is%20misconfigured")),
       303,
     );
   }
@@ -29,7 +30,7 @@ export async function POST(req: Request) {
   const password = String(form?.get("password") ?? "");
 
   const fail = (msg: string) =>
-    NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(msg)}`, req.url), 303);
+    NextResponse.redirect(new URL(redirectUrl(req, `/login?error=${encodeURIComponent(msg)}`)), 303);
 
   const result = await ensureBootstrapUser(email, password);
   if (!result.created) return fail(result.error ?? "could not create account");
@@ -41,5 +42,5 @@ export async function POST(req: Request) {
 
   if (!user) return fail("account created but could not be loaded");
   await createSessionCookie(user.id);
-  return NextResponse.redirect(new URL("/dashboard", req.url), 303);
+  return NextResponse.redirect(new URL(redirectUrl(req, "/dashboard")), 303);
 }
