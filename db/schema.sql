@@ -125,3 +125,43 @@ CREATE TABLE IF NOT EXISTS user_sites (
   site_id uuid NOT NULL REFERENCES sites (id) ON DELETE CASCADE,
   PRIMARY KEY (user_id, site_id)
 );
+-- ── Goals ───────────────────────────────────────────────────────────────────
+-- The user's own vocabulary. Analytics tools that ship a fixed list of
+-- conversions make everyone else's business model a second-class citizen, so
+-- goals are declared, not built in. One person tracks play_clicked and
+-- played_seconds; another tracks newsletter_signup and revenue_cents; a third
+-- tracks docs_completed and reading_seconds. Same dashboard, same code.
+CREATE TABLE IF NOT EXISTS goals (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  site_id     uuid NOT NULL REFERENCES sites (id) ON DELETE CASCADE,
+  name        text NOT NULL,
+  description text,
+  -- Shown next to the numbers so a bare count is never ambiguous: "94" could be
+  -- seconds, dollars or taps.
+  unit        text,
+  created_at  timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (site_id, name)
+);
+
+CREATE INDEX IF NOT EXISTS goals_site_idx ON goals (site_id, created_at DESC);
+
+-- Properties a goal carries, with how to aggregate them.
+--
+-- JSONB means the event schema stays open, but it also means nothing inside it
+-- is indexed or typed. Declaring the properties a goal actually uses is what
+-- lets the dashboard sum, average or bucket them without a column per event,
+-- and it is a deliberate trade: the operator declares a handful of fields once
+-- instead of the schema hardcoding every business model in the world.
+CREATE TABLE IF NOT EXISTS goal_properties (
+  id        bigserial PRIMARY KEY,
+  goal_id   uuid NOT NULL REFERENCES goals (id) ON DELETE CASCADE,
+  key       text NOT NULL,
+  type      text NOT NULL DEFAULT 'number' CHECK (type IN ('number', 'string')),
+  -- How the dashboard should treat it: a summed total, an average, or something
+  -- bucketed into a distribution.
+  agg       text NOT NULL DEFAULT 'sum' CHECK (agg IN ('sum', 'avg', 'count')),
+  unit      text,
+  UNIQUE (goal_id, key)
+);
+
+CREATE INDEX IF NOT EXISTS goal_properties_goal_idx ON goal_properties (goal_id);

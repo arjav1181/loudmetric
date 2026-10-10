@@ -27,7 +27,7 @@ export const NAV: Item[] = [
   { href: "/dashboard/pages", label: "Pages", group: "Analytics" },
   { href: "/dashboard/engagement", label: "Engagement", group: "Analytics" },
   { href: "/dashboard/vitals", label: "Core Web Vitals", group: "Analytics" },
-  { href: "/dashboard/play", label: "Play", group: "Measure" },
+  { href: "/dashboard/goals", label: "Goals", group: "Measure" },
   { href: "/dashboard/copilot", label: "Copilot", group: "Ask" },
   { href: "/dashboard/funnels", label: "Funnels", group: "Measure" },
   { href: "/dashboard/events", label: "Events", group: "Measure" },
@@ -43,7 +43,7 @@ import {
   Filter,
   Tag,
   Settings,
-  Play as PlayIcon,
+  Target,
 } from "lucide-react";
 
 /** lucide at 16px with a 1.5 stroke is the same icon language Geist uses. */
@@ -56,7 +56,7 @@ const ICONS: Record<string, LucideIcon> = {
   Funnels: Filter,
   Events: Tag,
   Settings,
-  Play: PlayIcon,
+  Goals: Target,
 };
 
 export function Nav({ horizontal }: { horizontal?: boolean }) {

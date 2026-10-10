@@ -89,7 +89,9 @@ export function formatDuration(ms: number | null): string {
   return `${m}m ${Math.round(s % 60)}s`;
 }
 
-export function compact(n: number): string {
+export { formatNumber as compact } from "@/lib/format";
+
+export function compactUnused(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1000) return `${(n / 1000).toFixed(n >= 10_000 ? 0 : 1)}k`;
   return String(n);
