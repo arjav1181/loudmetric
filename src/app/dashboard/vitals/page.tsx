@@ -47,7 +47,7 @@ export default async function VitalsPage({
         sub="Measured in the field on real devices via PerformanceObserver. Lab scores measure your laptop; these measure your visitors."
       />
 
-      <div className="space-y-4 p-5 sm:p-7">
+      <div className="space-y-3 p-3 sm:p-4 lg:px-6">
         {!hasAny ? (
           <Panel title="No samples yet">
             <Empty>
@@ -104,7 +104,7 @@ export default async function VitalsPage({
           })}
         </div>
 
-        <div className="grid gap-4 xl:grid-cols-3">
+        <div className="grid gap-3 lg:grid-cols-3">
           {ORDER.map((m) => {
             const meta = METRICS[m];
             return (

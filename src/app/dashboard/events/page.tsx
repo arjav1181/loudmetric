@@ -37,7 +37,7 @@ export default async function EventsPage({
         sub="Conversions you declared yourself."
       />
 
-      <div className="space-y-4 p-5 sm:p-7">
+      <div className="space-y-3 p-3 sm:p-4 lg:px-6">
         <div className="grid gap-3 sm:grid-cols-3">
           <Stat label="Total events" value={compact(overview.totals.events)} delta={null} />
           <Stat

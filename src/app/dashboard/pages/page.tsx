@@ -41,11 +41,11 @@ export default async function PagesPage({
         sub="Where people land and where they come from."
       />
 
-      <div className="space-y-4 p-5 sm:p-7">
-        <div className="grid gap-4 xl:grid-cols-3">
+      <div className="space-y-3 p-3 sm:p-4 lg:px-6">
+        <div className="grid gap-3 lg:grid-cols-3">
           <Panel
             title="Top pages"
-            className="xl:col-span-2"
+            className="xl:col-span-1"
             hint="Sorted by views. Query strings are stripped by the tracker, so this is a clean path list."
           >
             {pages.length === 0 ? (

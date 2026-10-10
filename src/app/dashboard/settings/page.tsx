@@ -44,7 +44,7 @@ export default async function SettingsPage({
     <>
       <Header siteId={site.id} siteName={site.name} range={range} title="Settings" base="/settings" />
 
-      <div className="space-y-4 p-5 sm:p-7">
+      <div className="space-y-3 p-3 sm:p-4 lg:px-6">
         {siteRow ? (
           <Panel title="Write key" hint="Safe to embed in your tracking snippet — it can only append events, never read them.">
             <pre className="overflow-x-auto rounded-md border border-white/[0.08] bg-black/40 p-3 font-mono text-[12px] text-white/70">
@@ -56,7 +56,7 @@ export default async function SettingsPage({
           </Panel>
         ) : null}
 
-        <div className="grid gap-4 xl:grid-cols-2">
+        <div className="grid gap-3 lg:grid-cols-2">
           <Panel title="Bot rules" hint="Substring match against the user agent, per site.">
             {bots.length === 0 ? (
               <Empty>

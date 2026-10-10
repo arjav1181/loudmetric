@@ -2,22 +2,31 @@ import {
   getOverview,
   getLiveVisitors,
   getPages,
+  getReferrers,
+  getDevices,
   getScrollFunnel,
+  getVitals,
 } from "@/lib/queries";
-import { compact } from "@/lib/vitals";
+import { compact, formatVital, gradeVital, METRICS, GRADE_DOT, GRADE_TEXT } from "@/lib/vitals";
 import { AnomalyPanel } from "./AnomalyPanel";
-import { BarChart } from "./charts";
+import { InteractiveBars, FunnelChart } from "./PortedCharts";
+import { Panel, Stat, Bars, Table, Empty, Delta } from "./PortedUI";
 import { Header, NoSite, parseRange, resolveSite } from "./shell";
-import { Bars, CARD, Caveat, Delta, Empty, Panel, Stat } from "./ui";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Overview: the numbers someone opens the tool to check, and nothing else.
+ * Overview.
  *
- * Every panel is a direct SQL aggregate over the selected window. There is no
- * rollup table and no cache, which means a number shown here is the same number
- * a raw query returns — the property that makes an analytics tool trustworthy.
+ * Composition ported from the portfolio admin: a four-tile stat row, then a
+ * 1.6fr/1fr split with the traffic chart beside a funnel and a secondary panel,
+ * then a three-column band. The proportions are the portfolio's, because the
+ * asymmetry between the primary chart and its sidebar is doing the work — a
+ * 50/50 split makes the chart as important as the funnel, and it is not.
+ *
+ * The data is entirely different. Everything below the grid is queried from
+ * Postgres at request time; no rollup table and no cache, so a number here is
+ * the same number a raw query returns.
  */
 export default async function DashboardPage({
   searchParams,
@@ -27,19 +36,24 @@ export default async function DashboardPage({
   const sp = await searchParams;
   const site = await resolveSite(sp.site);
   if (!site) return <NoSite />;
-
   const range = parseRange(sp.range);
 
   try {
-    const [overview, live, pages, scroll] = await Promise.all([
+    const [overview, live, pages, refs, devices, scroll, vitals] = await Promise.all([
       getOverview(site.id, range),
-      getLiveVisitors(site.id, 5),
+      getLiveVisitors(site.id, 5).catch(() => ({ active: 0, pages: 0 })),
       getPages(site.id, range, 6),
+      getReferrers(site.id, range, 6),
+      getDevices(site.id, range),
       getScrollFunnel(site.id, range),
+      getVitals(site.id, range).catch(() => ({ p75: { lcp: null, cls: null, inp: null }, series: [] })),
     ]);
 
     const { totals, deltas, series } = overview;
-    const maxScroll = Math.max(...scroll.map((s) => s.sessions), 1);
+    const engagedPct =
+      totals.sessions > 0
+        ? Math.round(((totals.sessions - totals.bounces) / totals.sessions) * 100)
+        : 0;
 
     return (
       <>
@@ -52,17 +66,19 @@ export default async function DashboardPage({
           sub={`Live: ${live.active} visitor${live.active === 1 ? "" : "s"} in the last 5 minutes.`}
         />
 
-        <div className="space-y-4 p-5 sm:p-7">
+        <div className="space-y-3 p-3 sm:p-4 lg:px-6">
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <Stat label="Pageviews" value={compact(totals.pageviews)} delta={deltas.pageviews} />
-            <Stat label="Unique visitors" value={compact(totals.visitors)} delta={deltas.visitors}
-              sub="per day, salt-rotated" />
             <Stat
-              label="Bounce rate"
-              value={totals.bounceRate === null ? "—" : `${totals.bounceRate}%`}
-              delta={deltas.bounceRate}
-              goodDirection="down"
-              sub="no scroll past 25%"
+              label="Unique"
+              value={compact(totals.visitors)}
+              delta={deltas.visitors}
+              sub="per day, salt-rotated"
+            />
+            <Stat
+              label="Engaged"
+              value={`${engagedPct}%`}
+              sub={`${totals.sessions - totals.bounces} sessions`}
             />
             <Stat
               label="Avg dwell"
@@ -74,107 +90,113 @@ export default async function DashboardPage({
 
           <AnomalyPanel siteId={site.id} />
 
-          <Panel
-            title="Traffic"
-            hint="Unique visitors are counted per day. Because the hash salt rotates daily, the same person cannot be counted as one visitor across two days — so this line is daily, never weekly uniques."
-            dense
-          >
-            {series.length === 0 ? (
-              <Empty>No pageviews in this range yet.</Empty>
-            ) : (
-              <BarChart
-                points={series.map((p) => ({
-                  label: p.t.slice(5, 10),
-                  value: p.pageviews,
-                  secondary: p.visitors,
-                }))}
-                primary="Pageviews"
-                secondary="Visitors"
-              />
-            )}
-          </Panel>
-
-          <div className="grid gap-4 xl:grid-cols-2">
+          <div className="grid gap-3 xl:grid-cols-[1.6fr_1fr]">
             <Panel
-              title="Top pages"
-              hint="Visitors column is per-day uniques, not per-page."
-              action={
-                <a href={`/dashboard/pages?site=${site.id}&range=${range}`} className="font-mono text-[11px] text-white/35 hover:text-white/70">
-                  All →
-                </a>
-              }
+              title="Traffic"
+              hint="Hover for exact numbers. Light bar behind each day is unique visitors."
             >
-              <Bars
-                rows={pages.map((p) => ({
-                  name: p.path,
-                  value: p.views,
-                  hint: p.views.toLocaleString(),
-                }))}
-                empty="No pages yet."
-              />
+              {series.length === 0 ? (
+                <Empty label="No data in this range." />
+              ) : (
+                <InteractiveBars
+                  points={series.map((p) => ({
+                    label: p.t.slice(5, 10),
+                    value: p.pageviews,
+                    secondary: p.visitors,
+                  }))}
+                  primary="views"
+                  secondary="unique"
+                  height={170}
+                />
+              )}
             </Panel>
 
-            <Panel
-              title="Scroll depth"
-              hint="Sessions that ever reached each threshold. This is the number that says whether a page works, and it is the one most tools cannot show you."
-            >
-              {scroll[0]?.sessions === 0 ? (
-                <Empty>No scroll events yet — needs a real page view.</Empty>
-              ) : (
-                <ul className="space-y-2.5">
-                  {scroll.map((s) => (
-                    <li key={s.depth}>
-                      <div className="flex items-baseline justify-between">
-                        <span className="font-mono text-[12px] text-white/60">{s.depth}%</span>
-                        <span className="font-mono text-[12px] tabular-nums text-white/40">
-                          {s.sessions.toLocaleString()}
-                          <span className="ml-2 text-white/25">
-                            {Math.round((s.sessions / maxScroll) * 100)}%
-                          </span>
-                        </span>
-                      </div>
-                      <div className="mt-1 h-[3px] w-full overflow-hidden rounded-full bg-white/[0.06]">
-                        <div
-                          className="h-full rounded-full bg-white/35"
-                          style={{ width: `${(s.sessions / maxScroll) * 100}%` }}
-                        />
-                      </div>
-                    </li>
+            <div className="space-y-3">
+              <Panel
+                title="Funnel"
+                hint="Scroll thresholds. Each stage is capped by the one above it."
+              >
+                {scroll[0]?.sessions === 0 ? (
+                  <Empty label="No scroll events yet." />
+                ) : (
+                  <FunnelChart
+                    stages={[
+                      { name: "Visited", value: scroll[0].sessions },
+                      { name: "25% scroll", value: scroll[0].sessions },
+                      { name: "50% scroll", value: scroll[1].sessions },
+                      { name: "75% scroll", value: scroll[2].sessions },
+                      { name: "Read to end", value: scroll[4].sessions },
+                    ]}
+                  />
+                )}
+              </Panel>
+
+              <Panel title="Core Web Vitals" hint="p75 from real visitors">
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  {(["lcp", "cls", "inp"] as const).map((m) => (
+                    <Mini
+                      key={m}
+                      label={METRICS[m].label}
+                      value={formatVital(m, vitals.p75[m])}
+                      tone={gradeVital(m, vitals.p75[m])}
+                    />
                   ))}
-                </ul>
-              )}
+                </div>
+              </Panel>
+            </div>
+          </div>
+
+          <div className="grid gap-3 lg:grid-cols-2">
+            <Panel title="Top pages" hint="Where people land" dense>
+              <Bars rows={pages.map((p) => ({ name: p.path, value: p.views }))} />
+            </Panel>
+            <Panel title="Referrers" hint="Where visits come from" dense>
+              <Bars rows={refs.map((r) => ({ name: r.referrer, value: r.views }))} />
             </Panel>
           </div>
 
-          <div className="grid gap-4 xl:grid-cols-3">
-            <div className={`${CARD} p-4 xl:col-span-2`}>
-              <p className="text-[10px] font-medium tracking-[0.18em] text-white/40 uppercase">
-                What these numbers do not mean
+          <div className="grid gap-3 lg:grid-cols-[1fr_1fr_1.2fr]">
+            <Panel title="Bounce rate" hint="One heartbeat under 10s, no scroll past 25%, no event">
+              <div className="flex items-baseline gap-3">
+                <span className="font-mono text-2xl text-white tabular-nums">
+                  {totals.bounceRate === null ? "—" : `${totals.bounceRate}%`}
+                </span>
+                <Delta value={deltas.bounceRate} goodDirection="down" />
+              </div>
+              <p className="mt-2 text-[11px] text-white/30">
+                {totals.bounces.toLocaleString()} of {totals.sessions.toLocaleString()} sessions
               </p>
-              <div className="mt-3 space-y-2">
-                <Caveat>
-                  Unique visitors are a lower bound. Two people behind one NAT share a hash and count
-                  once; one person switching networks counts twice. There is no fix for this without
-                  an identifier, and an identifier is the thing we are not building.
-                </Caveat>
-                <Caveat>
-                  A bounce is defined as one heartbeat under 10s with no scroll past 25% and no custom
-                  event. It is a deliberately conservative definition — someone who read one page
-                  carefully for two minutes is not counted as a bounce.
-                </Caveat>
-              </div>
-            </div>
-            <div className={`${CARD} flex flex-col justify-between p-4`}>
-              <div>
-                <p className="text-[10px] font-medium tracking-[0.18em] text-white/40 uppercase">
-                  Range
-                </p>
-                <p className="mt-2 text-[13px] leading-relaxed text-white/45">
-                  Comparisons are against the immediately preceding window of equal length.
-                </p>
-              </div>
-              <p className="mt-4 font-mono text-[11px] text-white/25">
-                <Delta value={deltas.sessions} /> sessions vs previous {range}
+            </Panel>
+
+            <Panel title="Devices" hint="Classified server-side at ingest" dense>
+              <Bars rows={devices.map((d) => ({ name: d.kind, value: d.n }))} />
+            </Panel>
+
+            <Panel title="Scroll depth" hint="Sessions that ever reached each threshold" dense>
+              <Table
+                head={["Depth", "Sessions"]}
+                rows={scroll.map((s) => [
+                  `${s.depth}%`,
+                  s.sessions.toLocaleString(),
+                ])}
+              />
+            </Panel>
+          </div>
+
+          <div className="border border-white/10 p-4">
+            <p className="text-[10px] font-medium tracking-[0.2em] text-white/40 uppercase">
+              What these numbers do not mean
+            </p>
+            <div className="mt-3 space-y-2">
+              <p className="border-l-2 border-white/10 pl-2.5 text-[11px] leading-relaxed text-white/30">
+                Unique visitors are a lower bound. Two people behind one NAT share a hash and count
+                once; one person switching networks counts twice. There is no fix without an
+                identifier, and an identifier is the thing we are not building.
+              </p>
+              <p className="border-l-2 border-white/10 pl-2.5 text-[11px] leading-relaxed text-white/30">
+                There is no persistent visitor id here, so returning users, cohort retention and
+                cross-day journeys are unknowable. If a question needs one of those, the honest answer
+                is that this system cannot answer it.
               </p>
             </div>
           </div>
@@ -186,10 +208,35 @@ export default async function DashboardPage({
     return (
       <>
         <Header siteId={site.id} siteName={site.name} range={range} title="Overview" base="" />
-        <div className="p-5 sm:p-7">
-          <Empty>{detail}</Empty>
+        <div className="p-6">
+          <Empty label={detail} />
         </div>
       </>
     );
   }
+}
+
+/**
+ * Compact figure with a grade dot. Ported in shape from the portfolio's Mini
+ * tile; the colour channel carries the Core Web Vitals verdict, which is why it
+ * takes a grade rather than a tone name.
+ */
+function Mini({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string | number;
+  tone: "good" | "needs-improvement" | "poor" | "unknown";
+}) {
+  return (
+    <div className="border border-white/10 p-2.5">
+      <p className="text-[9px] tracking-[0.15em] text-white/30 uppercase">{label}</p>
+      <p className={`mt-1 font-mono text-lg leading-none tabular-nums ${GRADE_TEXT[tone]}`}>
+        <span className={`mr-1.5 inline-block h-1.5 w-1.5 rounded-full align-middle ${GRADE_DOT[tone]}`} />
+        {value}
+      </p>
+    </div>
+  );
 }

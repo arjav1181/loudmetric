@@ -41,11 +41,11 @@ export default async function EngagementPage({
         sub="Which section held attention, and for how long. Measured by real element visibility, not scroll position."
       />
 
-      <div className="space-y-4 p-5 sm:p-7">
-        <div className="grid gap-4 xl:grid-cols-5">
+      <div className="space-y-3 p-3 sm:p-4 lg:px-6">
+        <div className="grid gap-3 xl:grid-cols-[1.4fr_1fr]">
           <Panel
             title="Section dwell time"
-            className="xl:col-span-3"
+            className="xl:col-span-1"
             hint="Average seconds a section spent as the most-visible element, per session that saw it. Sorted by attention."
           >
             {sections.length === 0 ? (
@@ -77,7 +77,7 @@ export default async function EngagementPage({
 
           <Panel
             title="Scroll depth"
-            className="xl:col-span-2"
+            className="xl:col-span-1"
             hint="Sessions that ever reached each threshold."
           >
             {top === 0 ? (

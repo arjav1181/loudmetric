@@ -48,7 +48,7 @@ export default async function FunnelsPage({
         sub="Ordered page paths within a single 30-minute session."
       />
 
-      <div className="space-y-4 p-5 sm:p-7">
+      <div className="space-y-3 p-3 sm:p-4 lg:px-6">
         {topPaths.length < 2 ? (
           <Panel title="Not enough pages yet">
             <Empty>A funnel needs at least two pages with traffic. Add pages and come back.</Empty>
