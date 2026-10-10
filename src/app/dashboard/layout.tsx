@@ -1,84 +1,40 @@
-import Link from "next/link";
-import { Suspense } from "react";
 import { getPool } from "@/lib/db";
-import { SidebarNav } from "./PortedNav";
-import { Nav } from "./nav";
+import { getLiveVisitors } from "@/lib/queries";
+import { AdminShell } from "./PortedShell";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Dashboard chrome, using the portfolio admin's rail markup and classes.
+ * Dashboard layout.
  *
- * The rail is fixed on desktop and becomes a slide-over on a phone, copied from
- * AdminShell rather than reinvented — the reason it is worth copying is that it
- * already handles both, and a dashboard that loses your place between eight
- * views of the same data is a dashboard nobody reads.
+ * The portfolio's AdminShell, mounted rather than paraphrased: sticky top bar
+ * with the health strip, refresh and auto-refresh controls; a fixed rail on
+ * desktop and a slide-over on a phone; and the command palette behind ⌘K. That
+ * chrome is most of what makes the panel feel like the same product, and it is
+ * the part that cannot be reconstructed from a screenshot.
+ *
+ * Only what the shell itself needs is fetched here. Each section fetches its own
+ * range-scoped data, so the layout does not do the panel's work twice.
  */
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const sites = await listSites();
+  const first = sites[0]?.id ?? null;
+  const [live, events] = await Promise.all([
+    first ? getLiveVisitors(first, 5).catch(() => ({ active: 0, pages: 0 })) : { active: 0, pages: 0 },
+    countEvents().catch(() => 0),
+  ]);
 
   return (
-    <div className="flex min-h-dvh">
-      <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 overflow-y-auto border-r border-white/10 bg-black px-3 pb-8 pt-5 lg:block">
-        <Link href="/" className="mb-6 block px-3">
-          <span className="text-[15px] font-bold tracking-[-0.02em]">LoudMetric</span>
-          <span className="mt-1 block font-mono text-[10px] text-white/25">cookie-free analytics</span>
-        </Link>
-
-        <Suspense fallback={null}>
-          <SidebarNav />
-        </Suspense>
-
-        {sites.length > 0 ? (
-          <div className="mt-6 border-t border-white/[0.07] pt-4">
-            <p className="px-3 text-[10px] tracking-[0.2em] text-white/25 uppercase">Sites</p>
-            <ul className="mt-2 flex flex-col gap-0.5 px-3">
-              {sites.map((s) => (
-                <li key={s.id}>
-                  <Link
-                    href={`/dashboard?site=${s.id}`}
-                    className="block truncate py-1 font-mono text-[11px] text-white/45 transition-colors hover:text-white/80"
-                  >
-                    {s.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-
-        <div className="mt-6 border-t border-white/[0.07] pt-4">
-          <ul className="flex flex-col gap-1 px-3 text-[11px] text-white/30">
-            <li>
-              <Link href="/" className="transition-colors hover:text-white/70">
-                ← All sites
-              </Link>
-            </li>
-            <li>
-              <a
-                href="https://github.com/arjav1181/loudmetric"
-                className="transition-colors hover:text-white/70"
-              >
-                GitHub ↗
-              </a>
-            </li>
-          </ul>
-        </div>
-      </aside>
-
-      {/* Phone: the rail is unreachable at this width, so the same links become a
-          horizontal scroller rather than being hidden. A nav you have to guess is
-          not a nav. */}
-      <div className="min-w-0 flex-1">
-        <div className="sticky top-0 z-30 overflow-x-auto border-b border-white/10 bg-black/95 px-4 py-3 backdrop-blur lg:hidden">
-          <Suspense fallback={null}>
-            <MobileNav />
-          </Suspense>
-        </div>
-        {children}
-      </div>
-    </div>
+    <AdminShell health={{ kv: true, lcp: null, live: live.active, events }} sites={sites}>
+      {children}
+    </AdminShell>
   );
+}
+
+/** Total events stored, shown in the shell's health strip. */
+async function countEvents(): Promise<number> {
+  const res = await getPool().query<{ n: number }>("SELECT count(*)::int AS n FROM events");
+  return res.rows[0]?.n ?? 0;
 }
 
 async function listSites(): Promise<{ id: string; name: string }[]> {
@@ -92,16 +48,3 @@ async function listSites(): Promise<{ id: string; name: string }[]> {
   }
 }
 
-/** Horizontal variant of the same nav, for narrow viewports. */
-function MobileNav() {
-  return (
-    <div className="flex items-center gap-3">
-      <Link href="/" className="shrink-0 text-[13px] font-bold tracking-[-0.02em]">
-        LoudMetric
-      </Link>
-      <div className="min-w-0 flex-1 overflow-x-auto">
-        <Nav />
-      </div>
-    </div>
-  );
-}

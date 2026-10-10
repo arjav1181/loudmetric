@@ -11,14 +11,14 @@ export type NavItem = {
 };
 
 export const NAV = [
-  { href: "/dashboard", label: "Overview", group: "Metrics", icon: "grid" },
-  { href: "/dashboard/pages", label: "Pages", group: "Metrics", icon: "doc" },
-  { href: "/dashboard/engagement", label: "Engagement", group: "Metrics", icon: "cursor" },
-  { href: "/dashboard/vitals", label: "Core Web Vitals", group: "Metrics", icon: "speed" },
-  { href: "/dashboard/copilot", label: "Copilot", group: "Ask", icon: "spark" },
-  { href: "/dashboard/funnels", label: "Funnels", group: "Measure", icon: "target" },
-  { href: "/dashboard/events", label: "Events", group: "Measure", icon: "chart" },
-  { href: "/dashboard/settings", label: "Settings", group: "Measure", icon: "wrench" },
+  { hint: "", href: "/dashboard", label: "Overview", group: "Metrics", icon: "grid" },
+  { hint: "", href: "/dashboard/pages", label: "Pages", group: "Metrics", icon: "doc" },
+  { hint: "", href: "/dashboard/engagement", label: "Engagement", group: "Metrics", icon: "cursor" },
+  { hint: "", href: "/dashboard/vitals", label: "Core Web Vitals", group: "Metrics", icon: "speed" },
+  { hint: "", href: "/dashboard/copilot", label: "Copilot", group: "Ask", icon: "spark" },
+  { hint: "", href: "/dashboard/funnels", label: "Funnels", group: "Measure", icon: "target" },
+  { hint: "", href: "/dashboard/events", label: "Events", group: "Measure", icon: "chart" },
+  { hint: "", href: "/dashboard/settings", label: "Settings", group: "Measure", icon: "wrench" },
 ];
 
 function Icon({ name }: { name: string }) {
