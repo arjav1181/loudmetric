@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { BarChart } from "../charts";
+import { InteractiveBars as BarChart } from "../charts";
 import type { AgentResult, AgentStep } from "@/lib/ai/agent";
 
 /**

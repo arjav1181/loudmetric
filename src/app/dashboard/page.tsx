@@ -9,8 +9,8 @@ import {
 } from "@/lib/queries";
 import { compact, formatVital, gradeVital, METRICS, GRADE_DOT, GRADE_TEXT } from "@/lib/vitals";
 import { AnomalyPanel } from "./AnomalyPanel";
-import { InteractiveBars, FunnelChart } from "./PortedCharts";
-import { Panel, Stat, Bars, Table, Empty, Delta } from "./PortedUI";
+import { InteractiveBars, FunnelChart } from "./charts";
+import { Panel, Stat, Bars, Table, Empty, Delta } from "./ui";
 import { Header, NoSite, parseRange, resolveSite } from "./shell";
 
 export const dynamic = "force-dynamic";
@@ -217,9 +217,11 @@ export default async function DashboardPage({
 }
 
 /**
- * Compact figure with a grade dot. Ported in shape from the portfolio's Mini
- * tile; the colour channel carries the Core Web Vitals verdict, which is why it
- * takes a grade rather than a tone name.
+ * Compact figure with a grade dot.
+ *
+ * The colour channel carries a real Core Web Vitals verdict against Google's
+ * thresholds, so it takes a grade rather than a decorative tone. The dot and the
+ * text say the same thing, so the meaning survives colour-blindness.
  */
 function Mini({
   label,

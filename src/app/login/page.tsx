@@ -45,7 +45,7 @@ export default async function LoginPage({
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center px-5 py-12">
         <div className="w-full max-w-sm">
-          <p className="text-[10px] font-medium tracking-[0.18em] text-white/40 uppercase">
+          <p className="geist-label">
             First run
           </p>
           <h1 className="mt-2 text-[24px] font-bold tracking-tight">Create your account</h1>
@@ -64,7 +64,7 @@ export default async function LoginPage({
                 type="email"
                 required
                 autoComplete="username"
-                className="mt-1.5 w-full rounded-md border border-white/[0.12] bg-black/40 px-3 py-2.5 text-[13px] outline-none focus:border-white/35"
+                className="geist-input mt-1.5"
               />
             </div>
             <div>
@@ -78,13 +78,13 @@ export default async function LoginPage({
                 required
                 minLength={12}
                 autoComplete="new-password"
-                className="mt-1.5 w-full rounded-md border border-white/[0.12] bg-black/40 px-3 py-2.5 text-[13px] outline-none focus:border-white/35"
+                className="geist-input mt-1.5"
               />
               <p className="mt-1.5 text-[11px] text-white/25">At least 12 characters.</p>
             </div>
             <button
               type="submit"
-              className="w-full rounded-md border border-white/20 py-2.5 font-mono text-[11px] uppercase tracking-[0.14em] transition-colors hover:border-white/45"
+              className="geist-btn geist-btn-primary w-full"
             >
               Create account
             </button>

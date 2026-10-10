@@ -49,10 +49,10 @@ export default async function EngagementPage({
             hint="Average seconds a section spent as the most-visible element, per session that saw it. Sorted by attention."
           >
             {sections.length === 0 ? (
-              <Empty>
-                No tagged sections found. Add <code className="text-white/50">data-lm-section=&quot;name&quot;</code>{" "}
-                to the elements you care about.
-              </Empty>
+              <Empty
+                label="No tagged sections found."
+                hint="Add data-lm-section to the elements you want measured."
+              />
             ) : (
               <ul className="space-y-3">
                 {sections.map((s) => (
@@ -81,7 +81,7 @@ export default async function EngagementPage({
             hint="Sessions that ever reached each threshold."
           >
             {top === 0 ? (
-              <Empty>No scroll events yet.</Empty>
+              <Empty label="No scroll events yet." />
             ) : (
               <ul className="space-y-3">
                 {scroll.map((s) => (

@@ -59,9 +59,10 @@ export default async function SettingsPage({
         <div className="grid gap-3 lg:grid-cols-2">
           <Panel title="Bot rules" hint="Substring match against the user agent, per site.">
             {bots.length === 0 ? (
-              <Empty>
-                No custom rules. Built-in signatures (headless browsers, known crawlers) always apply.
-              </Empty>
+              <Empty
+                label="No custom rules."
+                hint="Built-in signatures for headless browsers and known crawlers always apply."
+              />
             ) : (
               <Table head={["Pattern", "Kind"]} rows={bots.map((b) => [b.pattern, b.kind])} />
             )}

@@ -2,22 +2,213 @@
 @tailwind components;
 @tailwind utilities;
 
-/*
- * Only the pieces the portfolio admin relies on that Tailwind cannot express
- * inline. Everything else there is utilities, and the whole point of porting
- * that UI is to keep it recognisably the same code.
+/**
+ * Geist dark theme — LoudMetric.
+ *
+ * Every value below is taken from the official Geist dark token table rather
+ * than eyeballed. The structure follows Geist's own convention: a 10-step
+ * background scale where the step encodes *intent* (100 default surface,
+ * 200 hover, 300 active, 400 default border) plus translucent gray-alpha values
+ * for borders, dividers and hover states.
+ *
+ * Source: Geist Colors (dark), as bundled in the design system references.
  */
 
-:root {
-  color-scheme: dark;
+@layer base {
+  :root {
+    color-scheme: dark;
+
+    /* ── Surfaces ─────────────────────────────────────────────────────────── */
+    --geist-background-100: #000000;
+    --geist-background-200: #000000;
+
+    /* ── Solid grays: text and opaque fills ───────────────────────────────── */
+    --geist-gray-100: #1a1a1a;
+    --geist-gray-200: #1f1f1f;
+    --geist-gray-300: #292929;
+    --geist-gray-400: #2e2e2e;
+    --geist-gray-500: #454545;
+    --geist-gray-900: #a0a0a0;
+    --geist-gray-1000: #ededed;
+
+    /* ── Translucent grays: borders, dividers, hover ──────────────────────── */
+    --geist-gray-alpha-100: #ffffff12;
+    --geist-gray-alpha-200: #ffffff17;
+    --geist-gray-alpha-300: #ffffff21;
+    --geist-gray-alpha-400: #ffffff24;
+    --geist-gray-alpha-500: #ffffff3d;
+    --geist-gray-alpha-600: #ffffff82;
+    --geist-gray-alpha-900: #ffffff9c;
+    --geist-gray-alpha-1000: #ffffffeb;
+
+    /* ── Accents: state, not decoration ───────────────────────────────────── */
+    --geist-blue-600: #0090ff;
+    --geist-blue-700: #006efe;
+    --geist-red-600: #f32e40;
+    --geist-amber-600: #f5a623;
+
+    /* ── Spacing: 4px scale ───────────────────────────────────────────────── */
+    --geist-space-1: 4px;
+    --geist-space-2: 8px;
+    --geist-space-3: 12px;
+    --geist-space-4: 16px;
+    --geist-space-6: 24px;
+    --geist-space-8: 32px;
+    --geist-space-10: 40px;
+    --geist-space-16: 64px;
+
+    /* ── Radii: tight. 6px everyday, 12px menus ───────────────────────────── */
+    --geist-radius-sm: 6px;
+    --geist-radius: 6px;
+    --geist-radius-lg: 12px;
+  }
+
+  html,
+  body {
+    background: var(--geist-background-100);
+    color: var(--geist-gray-1000);
+    font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Geist sets body copy at a comfortable measure; the dashboard overrides
+       density per-panel rather than shrinking global text. */
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  ::selection {
+    background: var(--geist-blue-600);
+    color: #fff;
+  }
+
+  /*
+   * Focus is always visible and always blue. Removing the outline without a
+   * replacement is the single most common way an otherwise-correct interface
+   * becomes unusable by keyboard.
+   */
+  :focus-visible {
+    outline: 2px solid var(--geist-blue-600);
+    outline-offset: 2px;
+  }
+
+  /* Scrollbars follow Geist rather than the OS default, so a dark interface
+     does not flash a light scrollbar on a light background. */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--geist-gray-alpha-300);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--geist-gray-alpha-400);
+    background-clip: content-box;
+  }
 }
 
-html,
-body {
-  background: #000;
-  color: #fff;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@layer components {
+  /*
+   * Geist table text. Tabular figures everywhere numbers appear, so a column
+   * reads as a column rather than as ragged right edges.
+   */
+  .geist-mono {
+    font-family: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* The standard panel: 1px translucent border, 6px radius, no shadow. */
+  .geist-panel {
+    border: 1px solid var(--geist-gray-alpha-200);
+    border-radius: var(--geist-radius);
+    background: var(--geist-background-200);
+  }
+
+  .geist-label {
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.5;
+    color: var(--geist-gray-900);
+  }
+
+  /*
+   * Buttons, per Geist component defaults.
+   *   primary   solid gray-1000 fill, background-100 label
+   *   secondary background fill, gray-alpha-400 border
+   *   tertiary  transparent fill, gray-1000 text, tints on hover
+   */
+  .geist-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--geist-space-2);
+    height: 40px;
+    padding: 0 var(--geist-space-4);
+    border-radius: var(--geist-radius);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 150ms, border-color 150ms, color 150ms;
+  }
+  .geist-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .geist-btn-primary {
+    background: var(--geist-gray-1000);
+    color: var(--geist-background-100);
+    border: 1px solid var(--geist-gray-1000);
+  }
+  .geist-btn-primary:hover:not(:disabled) {
+    background: #fff;
+  }
+
+  .geist-btn-secondary {
+    background: var(--geist-background-100);
+    color: var(--geist-gray-1000);
+    border: 1px solid var(--geist-gray-alpha-400);
+  }
+  .geist-btn-secondary:hover:not(:disabled) {
+    background: var(--geist-gray-alpha-100);
+  }
+
+  .geist-btn-tertiary {
+    background: transparent;
+    color: var(--geist-gray-1000);
+    border: 1px solid transparent;
+  }
+  .geist-btn-tertiary:hover:not(:disabled) {
+    background: var(--geist-gray-alpha-100);
+  }
+
+  /* Inputs: background fill, translucent border, 6px radius. */
+  .geist-input {
+    width: 100%;
+    height: 40px;
+    padding: 0 var(--geist-space-3);
+    background: var(--geist-background-100);
+    border: 1px solid var(--geist-gray-alpha-300);
+    border-radius: var(--geist-radius);
+    color: var(--geist-gray-1000);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 150ms;
+  }
+  .geist-input:focus {
+    border-color: var(--geist-blue-600);
+  }
+  .geist-input::placeholder {
+    color: var(--geist-gray-600);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -26,17 +217,5 @@ body {
   *::after {
     transition-duration: 1ms !important;
     animation-duration: 1ms !important;
-  }
-}
-
-/*
- * The one class that earns its own rule: a monospace numeral stack. Used
- * everywhere in the dashboard, and the whole reason it exists is that a value
- * changing from 999 to 1,000 must not shift the column beside it.
- */
-@layer components {
-  .lm-mono {
-    font-family: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace;
-    font-variant-numeric: tabular-nums;
   }
 }

@@ -49,7 +49,7 @@ export default async function PagesPage({
             hint="Sorted by views. Query strings are stripped by the tracker, so this is a clean path list."
           >
             {pages.length === 0 ? (
-              <Empty>No pageviews in this range.</Empty>
+              <Empty label="No pageviews in this range." />
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[420px] border-collapse text-[12px]">

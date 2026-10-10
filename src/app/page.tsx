@@ -61,18 +61,18 @@ export default function Home() {
 
   return (
     <div className="mx-auto w-full max-w-[60rem] px-5 py-12">
-      <p className="text-[10px] font-medium tracking-[0.2em] text-white/40 uppercase">Self-hosted · cookie-free · MIT</p>
-      <h1 className="mt-2 text-[clamp(1.8rem,5vw,2.75rem)] font-extrabold tracking-[-0.02em]">LoudMetric</h1>
-      <p className="text-[13px] leading-relaxed text-white/55" style={{ maxWidth: "42rem", marginTop: "1rem" }}>
+      <p className="geist-label">Self-hosted · cookie-free · MIT</p>
+      <h1 className="mt-2 text-[32px] font-semibold leading-tight tracking-[-0.03em]">LoudMetric</h1>
+      <p className="mt-3 max-w-[42rem] text-[14px] leading-[1.6] text-white/55" style={{ maxWidth: "42rem", marginTop: "1rem" }}>
         Analytics that tells you what people actually read, and how fast your site really is —
         without setting a cookie or sending anyone a single byte about them.
       </p>
 
-      <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-5" style={{ marginTop: "2rem" }}>
-        <p className="text-[10px] font-medium tracking-[0.2em] text-white/40 uppercase">Add a site</p>
+      <div className="geist-panel p-5" style={{ marginTop: "2rem" }}>
+        <p className="geist-label">Add a site</p>
         <form onSubmit={create} style={{ display: "grid", gap: ".75rem", marginTop: ".9rem" }}>
           <div>
-            <label className="text-[10px] font-medium tracking-[0.2em] text-white/40 uppercase" htmlFor="name" style={{ display: "block", marginBottom: ".4rem" }}>
+            <label className="geist-label" htmlFor="name" style={{ display: "block", marginBottom: ".4rem" }}>
               Name
             </label>
             <input
@@ -83,7 +83,7 @@ export default function Home() {
             />
           </div>
           <div>
-            <label className="text-[10px] font-medium tracking-[0.2em] text-white/40 uppercase" htmlFor="domain" style={{ display: "block", marginBottom: ".4rem" }}>
+            <label className="geist-label" htmlFor="domain" style={{ display: "block", marginBottom: ".4rem" }}>
               Domain (optional)
             </label>
             <input
@@ -94,7 +94,7 @@ export default function Home() {
             />
           </div>
           <div>
-            <button type="submit" className="rounded-md border border-white/20 bg-transparent px-4 py-2.5 font-mono text-[11px] tracking-[0.12em] uppercase transition-colors hover:border-white/50 disabled:cursor-not-allowed disabled:opacity-45" disabled={busy || !name.trim()}>
+            <button type="submit" className="geist-btn geist-btn-primary" disabled={busy || !name.trim()}>
               {busy ? "Creating…" : "Create site"}
             </button>
           </div>
@@ -102,12 +102,12 @@ export default function Home() {
         {err ? <p className="text-[12px] text-red-300/90" style={{ marginTop: ".8rem" }}>{err}</p> : null}
       </div>
 
-      <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-5">
-        <p className="text-[10px] font-medium tracking-[0.2em] text-white/40 uppercase">Your sites</p>
+      <div className="geist-panel p-5">
+        <p className="geist-label">Your sites</p>
         {loading ? (
-          <p className="text-[13px] leading-relaxed text-white/55" style={{ marginTop: ".8rem" }}>Loading…</p>
+          <p className="mt-3 max-w-[42rem] text-[14px] leading-[1.6] text-white/55" style={{ marginTop: ".8rem" }}>Loading…</p>
         ) : sites.length === 0 ? (
-          <p className="text-[13px] leading-relaxed text-white/55" style={{ marginTop: ".8rem" }}>
+          <p className="mt-3 max-w-[42rem] text-[14px] leading-[1.6] text-white/55" style={{ marginTop: ".8rem" }}>
             No sites yet. Create one above and paste the snippet into your <code>&lt;head&gt;</code>.
           </p>
         ) : (
@@ -120,7 +120,7 @@ export default function Home() {
                 </p>
                 <pre>{snippet(s.write_key)}</pre>
                 <div
-                  className="lm-mono"
+                  className="geist-mono"
                   style={{
                     fontSize: 11,
                     color: "rgba(255,255,255,.3)",
@@ -156,16 +156,16 @@ export default function Home() {
         )}
       </div>
 
-      <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-5" style={{ marginTop: "2rem" }}>
-        <p className="text-[10px] font-medium tracking-[0.2em] text-white/40 uppercase">Where the data goes</p>
-        <p className="text-[13px] leading-relaxed text-white/55" style={{ marginTop: ".7rem" }}>
+      <div className="geist-panel p-5" style={{ marginTop: "2rem" }}>
+        <p className="geist-label">Where the data goes</p>
+        <p className="mt-3 max-w-[42rem] text-[14px] leading-[1.6] text-white/55" style={{ marginTop: ".7rem" }}>
           Every site above has a full dashboard: traffic, pages, scroll depth, section engagement,
           real Core Web Vitals, funnels, events, and anomaly detection. Open it from the button
           beside any site.
         </p>
       </div>
 
-      <p className="text-[13px] leading-relaxed text-white/55" style={{ marginTop: "2rem", fontSize: 13 }}>
+      <p className="mt-3 max-w-[42rem] text-[14px] leading-[1.6] text-white/55" style={{ marginTop: "2rem", fontSize: 13 }}>
         No cookies. No fingerprinting. IPs are hashed against a salt that rotates daily, so
         yesterday&rsquo;s visitors cannot be joined to today&rsquo;s.{" "}
         <a href="https://github.com/arjav1181/loudmetric" style={{ textDecoration: "underline" }}>

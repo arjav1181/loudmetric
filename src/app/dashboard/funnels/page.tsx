@@ -1,5 +1,5 @@
 import { getFunnel, getPages, type Funnel } from "@/lib/queries";
-import { Funnel as FunnelChart } from "./../charts";
+import { FunnelChart } from "../charts";
 import { Header, NoSite, parseRange, resolveSite } from "../shell";
 import { Caveat, Empty, Panel } from "../ui";
 
@@ -51,14 +51,14 @@ export default async function FunnelsPage({
       <div className="space-y-3 p-3 sm:p-4 lg:px-6">
         {topPaths.length < 2 ? (
           <Panel title="Not enough pages yet">
-            <Empty>A funnel needs at least two pages with traffic. Add pages and come back.</Empty>
+            <Empty label="A funnel needs at least two pages with traffic." hint="Add pages and come back." />
           </Panel>
         ) : result ? (
           <Panel
             title={`${funnel.name} · ${funnel.steps.length} steps`}
             hint="Bar width is proportional to sessions entered, so a steep drop is visible as a shape, not just a number."
           >
-            <FunnelChart steps={result.steps} />
+            <FunnelChart stages={result.steps.map((s) => ({ name: s.name, value: s.entered }))} />
             <div className="mt-4 space-y-2 border-t border-white/[0.05] pt-4">
               <Caveat>
                 Steps must be reached in order within 30 minutes of the previous step. A session that

@@ -30,7 +30,7 @@ export default function LoginForm() {
           type="email"
           required
           autoComplete="username"
-          className="mt-1.5 w-full rounded-md border border-white/[0.12] bg-black/40 px-3 py-2.5 text-[13px] outline-none focus:border-white/35"
+          className="geist-input mt-1.5"
         />
       </div>
       <div>
@@ -43,13 +43,13 @@ export default function LoginForm() {
           type="password"
           required
           autoComplete="current-password"
-          className="mt-1.5 w-full rounded-md border border-white/[0.12] bg-black/40 px-3 py-2.5 text-[13px] outline-none focus:border-white/35"
+          className="geist-input mt-1.5"
         />
       </div>
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-md border border-white/20 py-2.5 font-mono text-[11px] uppercase tracking-[0.14em] transition-colors hover:border-white/45 disabled:opacity-40"
+        className="geist-btn geist-btn-primary w-full"
       >
         {pending ? "Signing in…" : "Sign in"}
       </button>

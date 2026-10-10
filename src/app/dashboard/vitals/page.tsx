@@ -50,10 +50,10 @@ export default async function VitalsPage({
       <div className="space-y-3 p-3 sm:p-4 lg:px-6">
         {!hasAny ? (
           <Panel title="No samples yet">
-            <Empty>
-              Core Web Vitals appear once real visitors load your site. Nothing is simulated or
-              estimated in the meantime.
-            </Empty>
+            <Empty
+              label="Core Web Vitals appear once real visitors load your site."
+              hint="Nothing is simulated or estimated in the meantime."
+            />
           </Panel>
         ) : null}
 

@@ -57,10 +57,10 @@ export default async function EventsPage({
           hint="Send one with: loudmetric('track', 'signup', { plan: 'pro' })"
         >
           {events.length === 0 ? (
-            <Empty>
-              No custom events yet. Call <code className="text-white/50">loudmetric(&apos;track&apos;, &apos;name&apos;)</code>{" "}
-              anywhere in your code and it appears here.
-            </Empty>
+            <Empty
+              label="No custom events yet."
+              hint="Call loudmetric('track', 'name') anywhere in your code and it appears here."
+            />
           ) : (
             <Bars
               rows={events.map((e) => ({

@@ -3,7 +3,6 @@ import { getCurrentUser, allowedSiteIds } from "@/lib/auth";
 import { getPool } from "@/lib/db";
 import Copilot from "./Copilot";
 import { NoSite } from "../shell";
-import { LABEL } from "../ui";
 
 export const dynamic = "force-dynamic";
 
@@ -50,7 +49,7 @@ export default async function CopilotPage({
   return (
     <>
       <header className="border-b border-white/[0.06] px-5 py-4 sm:px-7">
-        <p className={LABEL}>{site?.name ?? "site"}</p>
+        <p className="geist-label">{site?.name ?? "site"}</p>
         <h1 className="mt-1.5 text-[22px] font-bold tracking-tight">Copilot</h1>
         <p className="mt-1.5 max-w-2xl text-[13px] leading-relaxed text-white/40">
           The model chooses the query and explains the answer. Postgres does the counting, every
