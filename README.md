@@ -1,10 +1,36 @@
 # LoudMetric
 
+[![CI](https://github.com/arjav1181/loudmetric/actions/workflows/ci.yml/badge.svg)](https://github.com/arjav1181/loudmetric/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Next.js](https://img.shields.io/badge/Next.js-14-000?logo=next.js&logoColor=white)](package.json)
+[![Postgres](https://img.shields.io/badge/PostgreSQL-14%2B-4169E1?logo=postgresql&logoColor=white)](db/schema.sql)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)](Dockerfile)
+
 Self-hosted, cookie-free analytics for people who do not want to track people.
 
 No cookies, no consent banner, no data leaving your server. It still tells you
 what people actually read, and how fast your site really is — which most
 cookieless tools do not.
+
+---
+
+## Contents
+
+- [Why this exists](#why-this-exists)
+- [Run it](#run-it)
+  - [Without Docker](#without-docker)
+- [How the privacy model works](#how-the-privacy-model-works)
+- [Try it before you have traffic](#try-it-before-you-have-traffic)
+  - [Operations](#operations)
+- [What it tracks](#what-it-tracks)
+  - [Tuning the snippet](#tuning-the-snippet)
+- [Bot filtering](#bot-filtering)
+- [Architecture](#architecture)
+- [Run it on a Hugging Face Space](#run-it-on-a-hugging-face-space)
+  - [Why not sync a live PGDATA](#why-not-sync-a-live-pgdata)
+  - [Files](#files)
+- [Contributing](#contributing)
+- [Licence](#licence)
 
 ---
 
@@ -262,6 +288,26 @@ count through a real `pg_restore`.
 | `hf/entrypoint.sh` | Boot: start PG, restore, migrate, serve, sync loop |
 | `hf/sync.py` | `push` / `pull` the dump to the dataset |
 | `hf/README.md` | Space frontmatter and public description |
+
+---
+
+## Contributing
+
+There is no `CONTRIBUTING.md` yet. In the meantime:
+
+```bash
+npm install
+npm test          # guard + grounding tests, no database needed
+npm run typecheck
+npm run build
+```
+
+The CI workflow runs the same commands, plus the database-backed tests against
+a real Postgres. It is deliberately thin — every job in it exists because it
+has already caught a real bug, so a new job should arrive with the bug it
+prevents.
+
+Issues and pull requests are welcome.
 
 ---
 
